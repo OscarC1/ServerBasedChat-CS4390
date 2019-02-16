@@ -10,8 +10,11 @@ Server module for ServerBasedChat
 """
 
 
+from pkg.Server import RunnableServer
+
+
 def main():
-    raise NotImplementedError
+    RunnableServer().run()
 
 
 if __name__ == "__main__":

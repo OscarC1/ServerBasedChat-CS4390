@@ -9,9 +9,14 @@ Client module for ServerBasedChat
 
 """
 
+from pkg.Client import RunnableClient
+
+SERVER_IP = "192.168.1.1"
+
 
 def main():
-    raise NotImplementedError
+    our_client_id = input("ID? > ")
+    RunnableClient(our_client_id).run(SERVER_IP)
 
 
 if __name__ == "__main__":
