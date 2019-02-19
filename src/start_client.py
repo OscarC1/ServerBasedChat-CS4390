@@ -9,7 +9,7 @@ Client module for ServerBasedChat
 
 """
 
-from types.Client import RunnableClient
+from Client import RunnableClient
 
 SERVER_IP = "192.168.1.1"
 

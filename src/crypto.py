@@ -10,7 +10,7 @@ Examples are MD5, SHA1, SHA256 etc.
 """
 
 import hashlib
-from os import urandom
+from os import urandom, path, makedirs
 
 
 def cRandom(bytes=512):
@@ -41,3 +41,23 @@ def a3(rand, secret):
     r.update(repr(rand).encode('utf-8'))
     r.update(repr(secret).encode('utf-8'))
     return r.hexdigest()
+
+
+def getKeyPath(client_id):
+    return path.join(".", "keys", client_id + ".key")
+
+
+def getKey(client_id):
+    try:
+        with open(getKeyPath(client_id), "r") as keyfile:
+            return keyfile.read()
+    except FileNotFoundError:
+        raise KeyError("[crypto] No keyfile for client id " + client_id)
+
+
+def storeKey(key, client_id):
+    keypath = getKeyPath(client_id)
+    (dir_, __) = path.split(keypath)
+    makedirs(dir_, exist_ok=True)  # Ensure directories exist
+    with open(keypath, "w") as keyfile:
+        keyfile.write(client_id)

@@ -1,5 +1,7 @@
 #!/bin/python3
 
+import crypto
+
 
 class BaseClient(object):
 
@@ -8,13 +10,23 @@ class BaseClient(object):
     def __init__(self, id):
         super().__init__()
         self.id = id
-        self.secret_key = None
+        self.loadSecret(gen_on_fail=True)
 
-    def setKey(self, secret_key):
-        self.secret_key = secret_key
+    def loadSecret(self, gen_on_fail=False):
+        try:
+            self.secret = crypto.getKey(self.id)
+            print("Loaded stored key for ID " + self.id)
+        except KeyError as e:
+            if gen_on_fail:
+                self.genSecret()
+            else:
+                raise
 
-    def generateKey(self):
-        raise NotImplementedError
+    def genSecret(self):
+        new_secret = crypto.cRandom(2048)
+        crypto.storeKey(new_secret, self.id)
+        print("New key generated for client ID " + self.id)
+        self.secret = new_secret
 
 
 class RunnableClient(BaseClient):
