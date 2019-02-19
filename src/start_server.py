@@ -10,7 +10,7 @@ Server module for ServerBasedChat
 """
 
 
-from pkg.Server import RunnableServer
+from types.Server import RunnableServer
 
 
 def main():
