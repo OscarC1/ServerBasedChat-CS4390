@@ -72,3 +72,8 @@ No integrity protection
 - CHAT(Session-ID, message)
 - HISTORY_REQ(Client-ID)
 - HISTORY_RESP(Client-ID, message)
+
+
+
+
+
