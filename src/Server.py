@@ -1,4 +1,12 @@
 #!/bin/python3
+"""
+# Description: 
+Server classes
+
+# Authors:
+- Seth Giovanetti
+"""
+
 
 import crypto
 from Client import BaseClient as Client

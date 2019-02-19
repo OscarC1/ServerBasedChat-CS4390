@@ -1,4 +1,11 @@
 #!/bin/python3
+"""
+# Description: 
+Client classes
+
+# Authors:
+- Seth Giovanetti
+"""
 
 import crypto
 

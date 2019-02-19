@@ -1,4 +1,13 @@
 """
+# Description: 
+Methods for secure key generation and storage
+
+# Authors:
+- Seth Giovanetti
+"""
+
+
+"""
 The server is assumed secure, and only the client needs to be authenticated.
 Authentication is based on the challenge/response mechanism, used in cellular networks.
 Upon receiving HELLO (Client-ID-A), the server looks up Client A’s secret key K_A.
