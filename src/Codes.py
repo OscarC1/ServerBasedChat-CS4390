@@ -7,6 +7,7 @@ try:
 except ImportError:
     # Not running python 3.6+
     _auto_i = 0
+
     def auto():
         global _auto_i
         _auto_i += 1
@@ -29,3 +30,13 @@ class Code(Enum):
     CHAT = auto()
     HISTORY_REQ = auto()
     HISTORY_RESP = auto()
+
+    def __repr__(self):
+        return "\n".join(
+            "\t".join(
+                map(str, [c.value, bytes([c.value]), c])
+            ) for c in Code
+        )
+
+    # def __str__(self):
+    #     return self.__repr__()

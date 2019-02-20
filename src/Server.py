@@ -13,6 +13,7 @@ from Codes import Code
 import byteutil
 from pprint import pprint
 import net
+from prompt import Prompt
 import threading
 
 import crypto
@@ -55,14 +56,20 @@ class RunnableServer(BaseServer):
         tcp_thread = threading.Thread(daemon=True, target=ss_tcp.serve_forever)
         tcp_thread.start()
 
-        while True:
-            user_input = input("> ")
-            print(user_input)
-            if (user_input.upper() == "HANDLES"):
-                pprint(self.login_handles)
-            if (user_input.upper() == "CODES"):
-                for code in Code:
-                    print(code, code.value, byteutil.x2bytes(code.value), sep="\t")
+        p = Prompt()
+        p.registerCommand(
+            "handles",
+            lambda *a: pprint(self.login_handles),
+            helpstr="Print login handles"
+        )
+        p.registerCommand(
+            "codes",
+            lambda *a: print(Code),
+            helpstr="Print protocol codes"
+        )
+
+        p()
+
         # raise NotImplementedError
 
     def startTCPConnection(self, udp_socket, client, client_address):
