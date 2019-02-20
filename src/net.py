@@ -55,16 +55,17 @@ def sendTCP(sock, message):
 
 # @timeout_decorator.timeout(10, use_signals=False)
 def awaitUDP(sock, size):
-    sock.settimeout(6)
+    sock.settimeout(SOCK_TIMEOUT)
     return sock.recvfrom(size)
 
 
 # @timeout_decorator.timeout(10, use_signals=False)
 def awaitTCP(sock, size):
-    sock.settimeout(6)
+    sock.settimeout(SOCK_TIMEOUT)
     return sock.recv(size)
 
 SERVER_IP = getOwnIP()  # "192.168.1.1"
 SERVER_UDP_PORT = 64
 CLIENT_UDP_PORT = 65
 SERVER_TCP_PORT = 66
+SOCK_TIMEOUT = 1

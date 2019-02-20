@@ -31,11 +31,9 @@ class Code(Enum):
     HISTORY_REQ = auto()
     HISTORY_RESP = auto()
 
-    def __repr__(self):
-        return "\n".join(
-            "\t".join(
-                map(str, [c.value, bytes([c.value]), c])
-            ) for c in Code
+    def __str__(self):
+        return "\t".join(
+            map(str, [self.value, bytes([self.value]), self.name])
         )
 
     # def __str__(self):

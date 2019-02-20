@@ -7,11 +7,14 @@ Client classes
 - Seth Giovanetti
 """
 
-import crypto
-import socket
-from Codes import Code
 import byteutil
+import crypto
 import net
+import socket
+
+from Codes import Code
+from pprint import pprint
+from prompt import Prompt
 
 
 class BaseClient(object):
@@ -58,9 +61,9 @@ class RunnableClient(BaseClient):
         # Store our associated server
         self.server = server
 
-        # Prepare socket
+        # Prepare UDP socket to send and recieve
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # host = socket.gethostname()
+
         host = net.getOwnIP()
         src_address = (host, 0,)
         sock.bind(src_address)
@@ -79,12 +82,11 @@ class RunnableClient(BaseClient):
 
         # Expect CHALLENGE from server
         response, server_address = net.awaitUDP(sock, 2**16)
-        code, _rand = byteutil.bytes2message(response)
-        rand = _rand.decode('utf-8')
+        code, rand = byteutil.bytes2message(response)
 
-        assert code == byteutil.x2bytes(Code.CHALLENGE), "Got non-challenge code {}".format(int.from_bytes(code))
+        assert code == Code.CHALLENGE.value, "Got non-challenge code {}".format(code)
 
-        # Decrypt
+        # Decrypt challenge with our secret
         response = crypto.a3(rand, self.secret)
 
         # Send RESPONSE to server
@@ -100,12 +102,12 @@ class RunnableClient(BaseClient):
 
         # Expect AUTH_SUCCESS or AUTH_FAIL from server
         response, server_address = net.awaitUDP(sock, 2**16)
-        code, *rest = byteutil.bytes2message(response)
+        code, *rest = byteutil.bytes2bytemsg(response)  # rest includes raw int data here, don't stringify
 
         if code == byteutil.x2bytes(Code.AUTH_FAIL):
             raise PermissionError("Server rejected key authentication.")
 
-        assert code == byteutil.x2bytes(Code.AUTH_SUCCESS), "Got non-auth code {}".format(int.from_bytes(code))
+        assert code == Code.AUTH_SUCCESS.value, "Got non-auth code {}".format(code)
         (token, server_tcp_port) = rest
         sock.close()
 
@@ -129,13 +131,23 @@ class RunnableClient(BaseClient):
         # Expect CONNECTED
         message = self.tcp_socket.recv(2**16)
         code, *rest = byteutil.bytes2message(message)
-        assert code == byteutil.x2bytes(Code.CONNECTED), "Got non-connect code {}".format(int.from_bytes(code))
+        assert code == Code.CONNECTED.value, "Got non-connect code {}".format(code)
 
         print("Logged in successfully.")
 
     def prompt(self):
         """Interactive prompt
         """
-        while True:
-            user_input = input("> ")
-            print(user_input)
+
+        p = Prompt()
+        p.registerCommand(
+            "codes",
+            lambda *a: print("\n".join(c.__str__() for c in Code)),
+            helpstr="Print protocol codes"
+        )
+        p.registerCommand(
+            "vars",
+            lambda *a: pprint(vars(self)),
+            helpstr="Show own variables"
+        )
+        p()

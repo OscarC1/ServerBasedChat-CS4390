@@ -45,6 +45,7 @@ class RunnableServer(BaseServer):
         print("Starting server on {}:{}".format(self.ip, self.port_udp))
 
         self.login_handles = dict()
+        self.challenge_handles = dict()
 
         ss_udp = socketserver.UDPServer((self.ip, self.port_udp), UDPListener)
         ss_udp.master = self
@@ -56,6 +57,9 @@ class RunnableServer(BaseServer):
         tcp_thread = threading.Thread(daemon=True, target=ss_tcp.serve_forever)
         tcp_thread.start()
 
+        self.prompt()
+
+    def prompt(self):
         p = Prompt()
         p.registerCommand(
             "handles",
@@ -64,10 +68,19 @@ class RunnableServer(BaseServer):
         )
         p.registerCommand(
             "codes",
-            lambda *a: print(Code),
+            lambda *a: print("\n".join(c.__str__() for c in Code)),
             helpstr="Print protocol codes"
         )
-
+        p.registerCommand(
+            "users",
+            lambda *a: print("\n".join(self.login_handles[k] for k in self.login_handles)),
+            helpstr="Show logged-in users"
+        )
+        p.registerCommand(
+            "vars",
+            lambda *a: pprint(vars(self)),
+            helpstr="Show own variables"
+        )
         p()
 
         # raise NotImplementedError
@@ -89,7 +102,7 @@ class RunnableServer(BaseServer):
     def onTCP(self, connection, code, args):
         if code == Code.CONNECT.value:
             print("Got TCP CONNECT code")
-            (token,) = byteutil.consumeStringArgs(args)
+            (token,) = args
 
             if self.login_handles.get(token):
                 client = Client(self.login_handles.get(token))
@@ -106,17 +119,16 @@ class RunnableServer(BaseServer):
                 print(token)
         else:
             print("No behavior for TCP code", code)
-        print(locals())
 
     def onUDP(self, sock, code, args, client_address):
         if code == Code.HELLO.value:
-            (client_id,) = byteutil.consumeStringArgs(args)
+            (client_id,) = args
 
             print("Got Hello with client id", client_id)
             client = Client(client_id)
 
             # Challenge client
-            self.login_handles[client.id] = rand = crypto.cRandom()
+            self.challenge_handles[client.id] = rand = crypto.cRandom()
 
             print("Sending challenge")
             net.sendUDP(
@@ -128,12 +140,12 @@ class RunnableServer(BaseServer):
                 client_address
             )
         elif code == Code.RESPONSE.value:
-            (client_id, response) = byteutil.consumeStringArgs(args)
+            (client_id, response) = args
             client = Client(client_id)
 
             print("Got response from client", client.id)
 
-            rand = self.login_handles.get(client.id)
+            rand = self.challenge_handles.get(client.id)
             if rand is not None:
                 xres = crypto.a3(rand, client.secret)
                 # print(rand, client.secret, xres)
@@ -187,8 +199,7 @@ class UDPListener(socketserver.BaseRequestHandler):
         print("│ ┌Message (bytes): '{}'".format(message))
         print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
 
-        _code, *rest = byteutil.bytes2message(message)
-        code = int.from_bytes(_code, byteorder='big')
+        code, *rest = byteutil.bytes2message(message)
         master.onUDP(connection, code, rest, client_address)
 
 
@@ -214,6 +225,5 @@ class TCPListener(socketserver.BaseRequestHandler):
         print("│ ┌Message (bytes): '{}'".format(message))
         print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
 
-        _code, *rest = byteutil.bytes2message(message)
-        code = int.from_bytes(_code, byteorder='big')
+        code, *rest = byteutil.bytes2message(message)
         master.onTCP(request, code, rest)
