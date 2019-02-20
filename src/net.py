@@ -2,7 +2,7 @@ from Codes import Code
 import byteutil
 import traceback
 import socket
-import timeout_decorator
+# import timeout_decorator
 
 
 def getOwnIP():
