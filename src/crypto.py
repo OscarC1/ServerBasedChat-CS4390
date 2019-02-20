@@ -22,7 +22,7 @@ import hashlib
 from os import urandom, path, makedirs
 
 
-def cRandom(bytes=512):
+def cRandom(bytes=64):
     """Cryptographic random number generator
 
     Returns:

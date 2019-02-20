@@ -10,12 +10,12 @@ Server module for ServerBasedChat
 """
 
 
-from net import SERVER_IP, SERVER_UDP_PORT
+from net import SERVER_IP, SERVER_UDP_PORT, SERVER_TCP_PORT
 from Server import RunnableServer
 
 
 def main():
-    RunnableServer(SERVER_IP, SERVER_UDP_PORT).run()
+    RunnableServer(SERVER_IP, SERVER_UDP_PORT, SERVER_TCP_PORT).run()
 
 
 if __name__ == "__main__":

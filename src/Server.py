@@ -11,7 +11,9 @@ import socketserver
 import socket
 from Codes import Code
 import byteutil
+from pprint import pprint
 import net
+import threading
 
 import crypto
 from Client import BaseClient as Client
@@ -27,10 +29,11 @@ class BaseServer(object):
 
     Currently unused. """
 
-    def __init__(self, server_ip, port_udp):
+    def __init__(self, server_ip, port_udp, port_tcp):
         super().__init__()
         self.ip = server_ip
         self.port_udp = port_udp
+        self.port_tcp = port_tcp
 
 
 class RunnableServer(BaseServer):
@@ -44,39 +47,103 @@ class RunnableServer(BaseServer):
 
         ss_udp = socketserver.UDPServer((self.ip, self.port_udp), UDPListener)
         ss_udp.master = self
-        ss_udp.serve_forever()
+        udp_thread = threading.Thread(daemon=True, target=ss_udp.serve_forever)
+        udp_thread.start()
+
+        ss_tcp = socketserver.TCPServer((self.ip, self.port_tcp), TCPListener)
+        ss_tcp.master = self
+        tcp_thread = threading.Thread(daemon=True, target=ss_tcp.serve_forever)
+        tcp_thread.start()
+
+        while True:
+            user_input = input("> ")
+            print(user_input)
+            if (user_input.upper() == "HANDLES"):
+                pprint(self.login_handles)
+            if (user_input.upper() == "CODES"):
+                for code in Code:
+                    print(code, code.value, byteutil.x2bytes(code.value), sep="\t")
         # raise NotImplementedError
+
+    def startTCPConnection(self, udp_socket, client, client_address):
+        # Configure TCP connection
+        print("Configuring TCP connection")
+        token = crypto.cRandom()
+        self.login_handles[token] = client.id
+
+        message = byteutil.message2bytes([
+            Code.AUTH_SUCCESS,
+            token,
+            self.port_tcp
+        ])
+        net.sendUDP(udp_socket, message, client_address)
+        return
+
+    def onTCP(self, connection, code, args):
+        if code == Code.CONNECT.value:
+            print("Got TCP CONNECT code")
+            (token,) = byteutil.consumeStringArgs(args)
+
+            if self.login_handles.get(token):
+                client = Client(self.login_handles.get(token))
+                print("Client", client.id, "logged in")
+                net.sendTCP(
+                    connection, 
+                    byteutil.message2bytes([
+                        Code.CONNECTED
+                    ])
+                )
+            else:
+                print("Bad login information")
+                print("No token")
+                print(token)
+        else:
+            print("No behavior for TCP code", code)
+        print(locals())
 
     def onUDP(self, sock, code, args, client_address):
         if code == Code.HELLO.value:
             (client_id,) = byteutil.consumeStringArgs(args)
 
-            print("Hello with client id", client_id)
+            print("Got Hello with client id", client_id)
             client = Client(client_id)
 
             # Challenge client
-            rand = crypto.cRandom()
+            self.login_handles[client.id] = rand = crypto.cRandom()
 
-            self.login_handles[client.id] = rand
-
-            message = byteutil.message2bytes([
-                Code.CHALLENGE,
-                rand
-            ])
-            net.sendUDP(sock, message, client_address)
+            print("Sending challenge")
+            net.sendUDP(
+                sock,
+                byteutil.message2bytes([
+                    Code.CHALLENGE,
+                    rand
+                ]),
+                client_address
+            )
         elif code == Code.RESPONSE.value:
             (client_id, response) = byteutil.consumeStringArgs(args)
             client = Client(client_id)
 
+            print("Got response from client", client.id)
+
             rand = self.login_handles.get(client.id)
             if rand is not None:
                 xres = crypto.a3(rand, client.secret)
-                print(rand, client.secret, xres)
-                print(xres == response)
+                # print(rand, client.secret, xres)
+                # print(xres == response)
                 if xres == response:
-                    pass
                     # Success
+                    print("Authentication success")
+                    self.startTCPConnection(sock, client, client_address)
             # otherwise, failure
+            print("Authentication failure")
+            net.sendUDP(
+                sock,
+                byteutil.message2bytes([
+                    Code.AUTH_FAIL
+                ]), 
+                client_address
+            )
         else:
             print("No behavior for UDP code", code)
 
@@ -101,6 +168,7 @@ class UDPListener(socketserver.BaseRequestHandler):
     def handle(self):
         client_address = self.client_address
         request = self.request
+        connection = self.server.socket
         master = self.server.master
 
         message = request[0]
@@ -114,4 +182,31 @@ class UDPListener(socketserver.BaseRequestHandler):
 
         _code, *rest = byteutil.bytes2message(message)
         code = int.from_bytes(_code, byteorder='big')
-        master.onUDP(self.server.socket, code, rest, client_address)
+        master.onUDP(connection, code, rest, client_address)
+
+
+class TCPListener(socketserver.BaseRequestHandler):
+    """
+    This class works similar to the TCP handler class, except that
+    self.request consists of a pair of data and client socket, and since
+    there is no connection the client address must be given explicitly
+    when sending data back via sendto().
+    """
+
+    def handle(self):
+        client_address = self.client_address
+        request = self.request
+        master = self.server.master
+        message = self.request.recv(2**16)
+
+        print(request)
+        print(client_address)
+
+        print("┌ Recieved TCP message")
+        print("│ Source: {}:{}".format(*client_address))
+        print("│ ┌Message (bytes): '{}'".format(message))
+        print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+
+        _code, *rest = byteutil.bytes2message(message)
+        code = int.from_bytes(_code, byteorder='big')
+        master.onTCP(request, code, rest)
