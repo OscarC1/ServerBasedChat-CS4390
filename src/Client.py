@@ -14,6 +14,7 @@ import byteutil
 import net
 
 
+
 class BaseClient(object):
 
     """A basic client with attributes"""
@@ -49,22 +50,41 @@ class RunnableClient(BaseClient):
         self.prompt()
 
     def login(self, server):
+        # Store our associated server
+        self.server = server
+
         # Prepare socket
-        src_port = 128
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        host = socket.gethostname()
-        src_address = (host, src_port,)
+        # host = socket.gethostname()
+        host = net.getOwnIP()
+        src_address = (host, 0,)
         sock.bind(src_address)
+        print("Socket open on", src_address)
 
         # Send UDP HELLO to server
-        dest_address = (self.ip, self.port_udp_listen,)
+        server_address = (self.server.ip, self.server.port_udp,)
         message = byteutil.message2bytes([
             Code.HELLO,
             self.id
         ])
-        net.sendUDP(sock, message, dest_address)
+        net.sendUDP(sock, message, server_address)
 
         # Expect CHALLENGE from server
+        response, server_address = net.awaitUDP(sock, 2**16)
+        code, _rand = byteutil.bytes2message(response)
+        rand = _rand.decode('utf-8')
+
+        assert code == byteutil.x2bytes(Code.CHALLENGE), "Got non-challenge code " + code
+
+        response = crypto.a3(rand, self.secret)
+        print(rand, self.secret, response)
+        message = byteutil.message2bytes([
+            Code.RESPONSE,
+            self.id,
+            response
+        ])
+        net.sendUDP(sock, message, server_address)
+
         raise NotImplementedError
 
         # Decrypt

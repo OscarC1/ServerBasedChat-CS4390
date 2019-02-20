@@ -1,6 +1,15 @@
 from Codes import Code
 import byteutil
 import traceback
+import socket
+import timeout_decorator
+
+
+def getOwnIP():
+    for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
+        family, __, __, __, address = addrinfo
+        if family == socket.AddressFamily.AF_INET:
+            return address[0]
 
 
 def sendUDP(sock, message, dest_address):
@@ -22,3 +31,14 @@ def sendUDP(sock, message, dest_address):
             traceback.print_exc(limit=0)
         else:
             raise
+
+
+# @timeout_decorator.timeout(10, use_signals=False)
+def awaitUDP(sock, size):
+    sock.settimeout(6)
+    return sock.recvfrom(size)
+
+
+SERVER_IP = getOwnIP()  # "192.168.1.1"
+SERVER_UDP_PORT = 64
+CLIENT_UDP_PORT = 65

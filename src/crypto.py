@@ -69,4 +69,4 @@ def storeKey(key, client_id):
     (dir_, __) = path.split(keypath)
     makedirs(dir_, exist_ok=True)  # Ensure directories exist
     with open(keypath, "w") as keyfile:
-        keyfile.write(client_id)
+        keyfile.write(key)

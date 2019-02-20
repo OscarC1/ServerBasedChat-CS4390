@@ -12,12 +12,10 @@ Client module for ServerBasedChat
 from Client import RunnableClient
 from Server import BaseServer
 
-SERVER_IP = "192.168.1.1"
-SERVER_UDP_LISTEN = 64
-
+from net import SERVER_IP, SERVER_UDP_PORT
 
 def main():
-    server = BaseServer(SERVER_IP, SERVER_UDP_LISTEN)
+    server = BaseServer(SERVER_IP, SERVER_UDP_PORT)
     our_client_id = input("ID? > ")
     RunnableClient(our_client_id).run(server)
 

@@ -29,3 +29,6 @@ def message2bytes(message):
 
 def formatBytesMessage(message):
     return ", ".join(map(str, bytes2message(message)))
+
+def consumeStringArgs(message):
+    return map(lambda b: b.decode('utf-8'), message)
