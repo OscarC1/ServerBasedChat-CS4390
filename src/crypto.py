@@ -47,6 +47,7 @@ def a3(rand, secret):
         hexdigest: XRES 
     """
     r = hashlib.sha256()
+    assert secret is not None
     r.update(repr(rand).encode('utf-8'))
     r.update(repr(secret).encode('utf-8'))
     return r.hexdigest()

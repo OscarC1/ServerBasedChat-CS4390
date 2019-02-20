@@ -21,11 +21,17 @@ class BaseClient(object):
     def __init__(self, id):
         super().__init__()
         self.id = id
-        self.loadSecret(gen_on_fail=True)
+        self._secret = None
 
+    @property
+    def secret(self):
+        if self._secret is None:
+            self.loadSecret()
+        return self._secret
+        
     def loadSecret(self, gen_on_fail=False):
         try:
-            self.secret = crypto.getKey(self.id)
+            self._secret = crypto.getKey(self.id)
             print("Loaded stored key for ID " + self.id)
         except KeyError as e:
             if gen_on_fail:
@@ -37,14 +43,14 @@ class BaseClient(object):
         new_secret = crypto.cRandom(128)
         crypto.storeKey(new_secret, self.id)
         print("New key generated for client ID " + self.id)
-        self.secret = new_secret
+        self._secret = new_secret
 
 
 class RunnableClient(BaseClient):
 
     """A stateful client with user interaction"""
-
     def run(self, server):
+        self.loadSecret(gen_on_fail=True)
         self.login(server)
         self.prompt()
 
