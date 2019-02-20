@@ -8,6 +8,10 @@ Client classes
 """
 
 import crypto
+import socket
+from Codes import Code
+import byteutil
+import net
 
 
 class BaseClient(object):
@@ -27,7 +31,7 @@ class BaseClient(object):
             if gen_on_fail:
                 self.genSecret()
             else:
-                raise
+                raise e
 
     def genSecret(self):
         new_secret = crypto.cRandom(2048)
@@ -40,12 +44,38 @@ class RunnableClient(BaseClient):
 
     """A stateful client with user interaction"""
 
-    def run(self, server_ip):
-        self.login(server_ip)
+    def run(self, server):
+        self.login(server)
         self.prompt()
 
-    def login(self, server_ip):
+    def login(self, server):
+        # Prepare socket
+        src_port = 128
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        host = socket.gethostname()
+        src_address = (host, src_port,)
+        sock.bind(src_address)
+
+        # Send UDP HELLO to server
+        dest_address = (self.ip, self.port_udp_listen,)
+        message = byteutil.message2bytes([
+            Code.HELLO,
+            self.id
+        ])
+        net.sendUDP(sock, message, dest_address)
+
+        # Expect CHALLENGE from server
         raise NotImplementedError
+
+        # Decrypt
+
+        # Send RESPONSE to server
+        
+        # Expect AUTH_SUCCESS or AUTH_FAIL from server
+
+        # Establish TCP Connection
+
+        # Expect CONNECTED
 
     def prompt(self):
         """Interactive prompt

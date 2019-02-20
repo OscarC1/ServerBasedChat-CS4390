@@ -7,6 +7,11 @@ Server classes
 - Seth Giovanetti
 """
 
+import socketserver
+import socket
+from Codes import Code
+import traceback
+import byteutil
 
 import crypto
 from Client import BaseClient as Client
@@ -22,7 +27,10 @@ class BaseServer(object):
 
     Currently unused. """
 
-    pass
+    def __init__(self, server_ip, port_udp_listen):
+        super().__init__()
+        self.ip = server_ip
+        self.port_udp_listen = port_udp_listen
 
 
 class RunnableServer(BaseServer):
@@ -40,6 +48,7 @@ class RunnableServer(BaseServer):
         Client A is expected to run the same algorithm A3 with the same inputs rand and K_A, and produce RES, which is sent to the server in the RESPONSE (Res) message.
         If RES matches XRES, the server has authenticated the client.
         """
+
         client = Client(client_id)
         rand = crypto.cRandom()
-        server_auth = crypto.a3(rand, client.secret)
+        xres = crypto.a3(rand, client.secret)
