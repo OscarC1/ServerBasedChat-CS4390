@@ -9,9 +9,9 @@ Team Members:
 | Name            | NetID     | Initials |
 | --------------- | --------- | -------- |
 | Seth Giovanetti | stg160130 | SG       |
-| Oscar Contreras |           | OC       |
-| Tam Nguyen      |           | TN       |
-| Brennan Stuewe  |           | BS       |
+| Oscar Contreras | oxc160030 | OC       |
+| Tam Nguyen      | tdn170530 | TN       |
+| Brennan Stuewe  | brs140230 | BS       |
 
 ## Table
 
@@ -30,6 +30,10 @@ Team Members:
 |      |                               |             |            |                  |        |      |        |
 |      |                               |             |            |                  |        |      |        |
 |      |                               |             |            |                  |        |      |        |
+
+## Notes
+
+Tam Nguyen has opted not to contribute to the group project and build a standalone network program for his own education.
 
 ## Deadlines
 
