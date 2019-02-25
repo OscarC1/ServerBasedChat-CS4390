@@ -17,20 +17,19 @@ Team Members:
 
 (Derived from gantt charts, see below)
 
-| No   | Action                        | Responsible | Deadline   | Resources Needed | Result | C    | Issues |
-| ---- | ----------------------------- | ----------- | ---------- | ---------------- | ------ | ---- | ------ |
-| 1    | Action Plan                   | SG          | 2019-02-26 |                  |        |      |        |
-| 2    | UDP transport                 | SG          |            |                  |        |      |        |
-| 3    | CK-A encryption               | SG          |            |                  |        |      |        |
-| 4    | TCP tunneling                 |             |            |                  |        |      |        |
-| 5    | Client prompt and messaging   | SG          |            |                  |        |      |        |
-| 6    | Server session handling       |             |            |                  |        |      |        |
-| 7    | History storage and retrieval |             |            |                  |        |      |        |
-| 8    | Polished client UI            | SG          |            |                  |        |      |        |
-|      |                               |             |            |                  |        |      |        |
-|      |                               |             |            |                  |        |      |        |
-|      |                               |             |            |                  |        |      |        |
-
+| No   | Action                             | Responsible            | Deadline   | Resources Needed | Dependencies | Result                                                  | Completed | Issues                                                       |
+| ---- | ---------------------------------- | ---------------------- | ---------- | ---------------- | ------------ | ------------------------------------------------------- | --------- | ------------------------------------------------------------ |
+| 1    | Action Plan                        | SG, OC                 | 2019-02-26 | GitHub           | None         | Get idea of how tasks will be divided                   |           | Most of team is less experienced in Python - members will need to use resources to become familiar. |
+| 2    | UDP Transport and Protocol         | SG (, OC?)             |            | IDE              | None         | Messages for login / initiation of connections done     |           |                                                              |
+| 3    | Authentication and CK-A Encryption | SG (, OC?)             |            | IDE              | 2            | Clients can be authenticated; messages can be encrypted |           |                                                              |
+| 4    | TCP Tunneling                      | (worked on by SG?), OC |            | IDE              | 2,3          | Ready to implement client-client messaging              |           |                                                              |
+| 5    | Client Prompt and Messaging        | SG                     |            | IDE              | 2,3,4        | Chat between clients can be performed                   |           |                                                              |
+| 6    | Server Session Handling            |                        |            | IDE              | 2,3,4,5      | Functional chat in place                                |           |                                                              |
+| 7    | History Storage and Retrieval      | OC                     |            | IDE              | 2,3,4,5,6    | Chat history retrievable by clients                     |           |                                                              |
+| 8    | Polished Client UI                 | SG                     |            | IDE              | 2,3,4,5,6,7  | Implementation of chat program done                     |           |                                                              |
+|      |                                    |                        |            |                  |              |                                                         |           |                                                              |
+|      |                                    |                        |            |                  |              |                                                         |           |                                                              |
+|      |                                    |                        |            |                  |              |                                                         |           |                                                              |
 ## Notes
 
 Tam Nguyen has opted not to contribute to the group project and build a standalone network program for his own education.
