@@ -5,8 +5,17 @@ import socket
 # import timeout_decorator
 
 
+def newUDPSocket():
+    return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+
+def newTCPSocket():
+    return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+
 def reprTCPSocket(sock):
-    return "<{}{} <-> {}>".format(
+    closed = getattr(sock, '_closed', False)
+    return "<{}{} --> {}>".format(
         "[closed] " if closed else "",
         sock.getsockname(),
         sock.getpeername()
@@ -21,12 +30,6 @@ def getOwnIP():
 
 
 def sendUDP(sock, message, dest_address):
-    if isinstance(message, Code):
-        message = message.value
-
-    if not isinstance(message, bytes):
-        message = bytes(message)
-
     print("┌ Sending UDP message to server")
     print("│ Server: {}:{}".format(*dest_address))
     print("│ ┌Message (bytes): '{}'".format(message))
@@ -42,14 +45,6 @@ def sendUDP(sock, message, dest_address):
 
 
 def sendTCP(sock, message):
-    if isinstance(message, Code):
-        print("Converting Code to bytes")
-        message = message.value
-
-    if not isinstance(message, bytes):
-        print("Converting to bytes")
-        message = bytes(message)
-
     print("┌ Sending TCP message via socket", reprTCPSocket(sock))
     print("│ ┌Message (bytes): '{}'".format(message))
     print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
