@@ -4,13 +4,14 @@ import traceback
 import socket
 # import timeout_decorator
 
+
 def reprTCPSocket(sock):
     return "<{}{} <-> {}>".format(
         "[closed] " if closed else "",
         sock.getsockname(),
         sock.getpeername()
     )
-    
+
 
 def getOwnIP():
     for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
@@ -39,6 +40,7 @@ def sendUDP(sock, message, dest_address):
         else:
             raise
 
+
 def sendTCP(sock, message):
     if isinstance(message, Code):
         print("Converting Code to bytes")
@@ -61,6 +63,8 @@ def sendTCP(sock, message):
             raise
 
 # @timeout_decorator.timeout(10, use_signals=False)
+
+
 def awaitUDP(sock, size):
     sock.settimeout(SOCK_TIMEOUT)
     return sock.recvfrom(size)
@@ -70,6 +74,7 @@ def awaitUDP(sock, size):
 def awaitTCP(sock, size):
     sock.settimeout(SOCK_TIMEOUT)
     return sock.recv(size)
+
 
 SERVER_IP = getOwnIP()  # "192.168.1.1"
 SERVER_UDP_PORT = 64

@@ -68,10 +68,9 @@ class RunnableClient(BaseClient):
         # Prepare UDP socket to send and recieve
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        host = net.getOwnIP()
-        src_address = (host, 0,)
-        sock.bind(src_address)
-        print("Socket open on", src_address)
+        # src_address = (net.getOwnIP(), 0,)
+        # sock.bind(src_address)
+        # print("Socket open on", src_address)
 
         # Send UDP HELLO to server
         server_address = (self.server.ip, self.server.port_udp,)
