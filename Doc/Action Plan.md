@@ -27,9 +27,6 @@ Team Members:
 | 6    | Server Session Handling            |                        |            | IDE              | 2,3,4,5      | Functional chat in place                                |           |                                                              |
 | 7    | History Storage and Retrieval      | OC                     |            | IDE              | 2,3,4,5,6    | Chat history retrievable by clients                     |           |                                                              |
 | 8    | Polished Client UI                 | SG                     |            | IDE              | 2,3,4,5,6,7  | Implementation of chat program done                     |           |                                                              |
-|      |                                    |                        |            |                  |              |                                                         |           |                                                              |
-|      |                                    |                        |            |                  |              |                                                         |           |                                                              |
-|      |                                    |                        |            |                  |              |                                                         |           |                                                              |
 ## Notes
 
 Tam Nguyen has opted not to contribute to the group project and build a standalone network program for his own education.
