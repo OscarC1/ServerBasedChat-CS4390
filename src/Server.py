@@ -26,9 +26,7 @@ from listener import UDPListener
 
 class BaseServer(object):
 
-    """A basic server with attributes.
-
-    Currently unused. """
+    """A basic server with attributes."""
 
     def __init__(self, server_ip, port_udp, port_tcp):
         super().__init__()
@@ -46,16 +44,13 @@ class RunnableServer(BaseServer):
 
         self.login_handles = dict()
         self.challenge_handles = dict()
+        self.connections_by_id = dict()
+        self.ids_by_address = dict()
 
-        ss_udp = socketserver.UDPServer((self.ip, self.port_udp), UDPListener)
-        ss_udp.master = self
+        ss_udp = socketserver.UDPServer(('', self.port_udp), UDPListener)
+        ss_udp.callback = self.onUDP
         udp_thread = threading.Thread(daemon=True, target=ss_udp.serve_forever)
         udp_thread.start()
-
-        ss_tcp = socketserver.TCPServer((self.ip, self.port_tcp), TCPListener)
-        ss_tcp.master = self
-        tcp_thread = threading.Thread(daemon=True, target=ss_tcp.serve_forever)
-        tcp_thread.start()
 
         self.prompt()
 
@@ -87,19 +82,33 @@ class RunnableServer(BaseServer):
 
     def startTCPConnection(self, udp_socket, client, client_address):
         # Configure TCP connection
-        print("Configuring TCP connection")
+        print("Spinning up new TCP socket")
+
+        ss_tcp = socketserver.TCPServer(('', self.port_tcp), TCPListener)
+        ss_tcp.callback = self.onTCP
+        tcp_thread = threading.Thread(daemon=True, target=ss_tcp.serve_forever)
+        tcp_thread.start()
+        self.connections_by_id[client.id] = ss_tcp
+
+        # new_tcp_socket = net.newTCPSocket()
+        # new_tcp_socket.bind(('', self.port_tcp))
+
+        print("Configuring TCP cookie")
         token = crypto.cRandom()
         self.login_handles[token] = client.id
 
-        message = byteutil.message2bytes([
-            Code.AUTH_SUCCESS,
-            token,
-            self.port_tcp
-        ])
-        net.sendUDP(udp_socket, message, client_address)
-        return
+        net.sendUDP(
+            udp_socket, 
+            byteutil.message2bytes([
+                Code.AUTH_SUCCESS,
+                token,
+                self.port_tcp
+            ]), 
+            client_address
+        )
 
-    def onTCP(self, connection, code, args):
+    def onTCP(self, connection, code, args, client_address):
+        print(connection)
         if code == Code.CONNECT.value:
             print("Got TCP CONNECT code")
             (token,) = args
@@ -113,10 +122,30 @@ class RunnableServer(BaseServer):
                         Code.CONNECTED
                     ])
                 )
+                self.ids_by_address[client_address] = client.id
             else:
                 print("Bad login information")
                 print("No token")
                 print(token)
+        elif code == Code.DISCONNECT.value:
+            print("Got TCP DISCONNECT message")
+            ss_tcp = self.connections_by_id[self.ids_by_address[client_address]]
+            print("Closing", ss_tcp)
+            ss_tcp.server_close()
+            print(self.connections_by_id)
+            print("Disconnected client", client_address)
+
+        elif code == Code.CHAT.value:
+            print("Got TCP CHAT message")
+            (message,) = args
+            print(message)
+            net.sendTCP(
+                connection, 
+                byteutil.message2bytes([
+                    Code.CHAT,
+                    "Hi back"
+                ])
+            )
         else:
             print("No behavior for TCP code", code)
 
@@ -154,7 +183,6 @@ class RunnableServer(BaseServer):
                     # Success
                     print("Authentication success")
                     self.startTCPConnection(sock, client, client_address)
-                    return
             # otherwise, failure
             print("Authentication failure")
             net.sendUDP(
