@@ -7,21 +7,21 @@ Server classes
 - Seth Giovanetti
 """
 
-import socketserver
-import socket
-from Codes import Code
 import byteutil
-from pprint import pprint
 import net
-from prompt import Prompt
+import socketserver
 import threading
 
+from Codes import Code
+from pprint import pprint
+from prompt import Prompt
+
 import crypto
+
 from Client import BaseClient as Client
 
-
-def getSecret(client_id):
-    raise NotImplementedError
+from listener import TCPListener
+from listener import UDPListener
 
 
 class BaseServer(object):
@@ -154,6 +154,7 @@ class RunnableServer(BaseServer):
                     # Success
                     print("Authentication success")
                     self.startTCPConnection(sock, client, client_address)
+                    return
             # otherwise, failure
             print("Authentication failure")
             net.sendUDP(
@@ -175,55 +176,3 @@ class RunnableServer(BaseServer):
         If RES matches XRES, the server has authenticated the client.
         """
 
-
-class UDPListener(socketserver.BaseRequestHandler):
-    """
-    This class works similar to the TCP handler class, except that
-    self.request consists of a pair of data and client socket, and since
-    there is no connection the client address must be given explicitly
-    when sending data back via sendto().
-    """
-
-    def handle(self):
-        client_address = self.client_address
-        request = self.request
-        connection = self.server.socket
-        master = self.server.master
-
-        message = request[0]
-        print(request)
-        print(client_address)
-
-        print("┌ Recieved UDP message")
-        print("│ Source: {}:{}".format(*client_address))
-        print("│ ┌Message (bytes): '{}'".format(message))
-        print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
-
-        code, *rest = byteutil.bytes2message(message)
-        master.onUDP(connection, code, rest, client_address)
-
-
-class TCPListener(socketserver.BaseRequestHandler):
-    """
-    This class works similar to the TCP handler class, except that
-    self.request consists of a pair of data and client socket, and since
-    there is no connection the client address must be given explicitly
-    when sending data back via sendto().
-    """
-
-    def handle(self):
-        client_address = self.client_address
-        request = self.request
-        master = self.server.master
-        message = self.request.recv(2**16)
-
-        print(request)
-        print(client_address)
-
-        print("┌ Recieved TCP message")
-        print("│ Source: {}:{}".format(*client_address))
-        print("│ ┌Message (bytes): '{}'".format(message))
-        print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
-
-        code, *rest = byteutil.bytes2message(message)
-        master.onTCP(request, code, rest)

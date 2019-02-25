@@ -38,3 +38,9 @@ class Code(Enum):
 
     # def __str__(self):
     #     return self.__repr__()
+
+def codeno(i):
+    for c in Code:
+        if c.value == i:
+            return c
+    raise KeyError

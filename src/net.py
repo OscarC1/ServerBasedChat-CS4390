@@ -4,6 +4,13 @@ import traceback
 import socket
 # import timeout_decorator
 
+def reprTCPSocket(sock):
+    return "<{}{} <-> {}>".format(
+        "[closed] " if closed else "",
+        sock.getsockname(),
+        sock.getpeername()
+    )
+    
 
 def getOwnIP():
     for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
@@ -41,7 +48,7 @@ def sendTCP(sock, message):
         print("Converting to bytes")
         message = bytes(message)
 
-    print("┌ Sending TCP message via socket")
+    print("┌ Sending TCP message via socket", reprTCPSocket(sock))
     print("│ ┌Message (bytes): '{}'".format(message))
     print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
 

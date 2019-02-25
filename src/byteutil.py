@@ -28,14 +28,18 @@ def bytes2message(bytes):
     codePlusMsg = [int.from_bytes(code, byteorder='big')] + [b.decode('utf-8') for b in rest]
     return codePlusMsg
 
+
 def bytes2bytemsg(bytes):
     code, *rest = bytes.split(NULL_BYTE)
     codePlusMsg = [int.from_bytes(code, byteorder='big')] + rest
     return codePlusMsg
+
 
 def message2bytes(message):
     return NULL_BYTE.join(map(x2bytes, message))
 
 
 def formatBytesMessage(message):
-    return ", ".join(map(str, bytes2message(message)))
+    from Codes import codeno
+    code, *rest = bytes2message(message)
+    return ", ".join([codeno(code).name] + rest)
