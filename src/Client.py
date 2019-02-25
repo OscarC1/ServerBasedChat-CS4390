@@ -60,32 +60,33 @@ class RunnableClient(BaseClient):
         self.loadSecret(gen_on_fail=True)
         self.login(server)
         self.prompt()
+        self.disconnect()
 
     def login(self, server):
         # Store our associated server
         self.server = server
 
         # Prepare UDP socket to send and recieve
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock = net.newUDPSocket()
 
         # src_address = (net.getOwnIP(), 0,)
         # sock.bind(src_address)
         # print("Socket open on", src_address)
 
         # Send UDP HELLO to server
-        server_address = (self.server.ip, self.server.port_udp,)
+        serv_address_udp = (self.server.ip, self.server.port_udp,)
         net.sendUDP(
             sock,
             byteutil.message2bytes([
                 Code.HELLO,
                 self.id
             ]),
-            server_address
+            serv_address_udp
         )
 
         # Expect CHALLENGE from server
         print("Awaiting CHALLENGE from server")
-        response, server_address = net.awaitUDP(sock, 2**16)
+        response, serv_address_udp = net.awaitUDP(sock, 2**16)
         code, rand = byteutil.bytes2message(response)
 
         assert code == Code.CHALLENGE.value, "Got non-challenge code {}".format(code)
@@ -101,19 +102,19 @@ class RunnableClient(BaseClient):
                 self.id,
                 response
             ]),
-            server_address
+            serv_address_udp
         )
 
         # Expect AUTH_SUCCESS or AUTH_FAIL from server
         print("Awaiting AUTH result from server")
-        response, server_address = net.awaitUDP(sock, 2**16)
+        response, serv_address_udp = net.awaitUDP(sock, 2**16)
         code, *rest = byteutil.bytes2bytemsg(response)  # rest includes raw int data here, don't stringify
 
         if code == byteutil.x2bytes(Code.AUTH_FAIL):
             raise PermissionError("Server rejected key authentication.")
 
         assert code == Code.AUTH_SUCCESS.value, "Got non-auth code {}".format(code)
-        (token, server_tcp_port) = rest
+        (token, server_tcp_port_bytes) = rest
 
         print("Closing UDP socket")
         sock.close()
@@ -121,24 +122,24 @@ class RunnableClient(BaseClient):
         # Establish TCP Connection
         print("Establishing TCP connection with cookie")
         self.token = token
-        self.server_tcp_port = int.from_bytes(server_tcp_port, byteorder='big')
+        self.server_tcp_port = int.from_bytes(server_tcp_port_bytes, byteorder='big')
 
         # Create a TCP address with our old IP and our new port
-        (server_ip, udp_port) = server_address
-        server_address = (server_ip, self.server_tcp_port)
+        (server_ip, udp_port) = serv_address_udp
+        serv_address_tcp = (server_ip, self.server_tcp_port)
 
-        print("Starting up TCP listener")
-        self.tcp_server = socketserver.TCPServer(src_address, TCPListener)
-        self.tcp_server.master = self
-        self.tcp_thread = threading.Thread(daemon=True, target=self.tcp_server.serve_forever)
-        self.tcp_thread.start()
+        # print("Starting up TCP listener")
+        # self.tcp_server = socketserver.TCPServer(src_address, TCPListener)
+        # self.tcp_server.master = self
+        # self.tcp_thread = threading.Thread(daemon=True, target=self.tcp_server.serve_forever)
+        # self.tcp_thread.start()
 
-        print("Connecting TCP socket", server_address)
+        print("Connecting TCP socket", serv_address_tcp)
         # self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # server_address = (server_ip, self.server_tcp_port)
+        # serv_address_tcp = (server_ip, self.server_tcp_port)
 #         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcp_socket = self.tcp_server.socket
-        self.tcp_socket.connect(server_address)
+        self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.tcp_socket.connect(serv_address_tcp)
 
         net.sendTCP(
             self.tcp_socket,
@@ -148,13 +149,22 @@ class RunnableClient(BaseClient):
             ])
         )
         # Expect CONNECTED
-        message = self.tcp_socket.recv(2**16)
+
+        self.ss_tcp = socketserver.TCPServer(self.tcp_socket.getsockname(), TCPListener, True)
+        self.ss_tcp.callback = self.onTCP
+        tcp_thread = threading.Thread(daemon=True, target=self.ss_tcp.serve_forever)
+        tcp_thread.start()
+
+        message = net.awaitTCP(self.tcp_socket, 2**16)
         code, *rest = byteutil.bytes2message(message)
         assert code == Code.CONNECTED.value, "Got non-connect code {}".format(code)
 
         print("Logged in successfully.")
         print(self.tcp_socket)
-        print(self.tcp_server.socket)
+
+    def onTCP(self, connection, code, args, client_address):
+        print("TCP HIT")
+        print(connection)
 
     def tcp_say(self, *args):
         print("tcp say:", args)
@@ -165,6 +175,15 @@ class RunnableClient(BaseClient):
                 " ".join(args)
             ])
         )
+
+    def disconnect(self, *args):
+        net.sendTCP(
+            self.tcp_socket,
+            byteutil.message2bytes([
+                Code.DISCONNECT
+            ])
+        )
+        raise KeyboardInterrupt
 
     def onTCP(self, connection, code, args):
         if False:
@@ -191,5 +210,10 @@ class RunnableClient(BaseClient):
             "say",
             self.tcp_say,
             helpstr="Say"
+        )
+        p.registerCommand(
+            "disconnect",
+            self.disconnect,
+            helpstr="Disconnect session"
         )
         p()

@@ -30,6 +30,7 @@ class Code(Enum):
     CHAT = auto()
     HISTORY_REQ = auto()
     HISTORY_RESP = auto()
+    DISCONNECT = auto()
 
     def __str__(self):
         return "\t".join(

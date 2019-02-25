@@ -14,7 +14,7 @@ class UDPListener(socketserver.BaseRequestHandler):
         client_address = self.client_address
         request = self.request
         connection = self.server.socket
-        master = self.server.master
+        callback = self.server.callback
 
         message = request[0]
         print(request)
@@ -26,7 +26,7 @@ class UDPListener(socketserver.BaseRequestHandler):
         print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
 
         code, *rest = byteutil.bytes2message(message)
-        master.onUDP(connection, code, rest, client_address)
+        callback(connection, code, rest, client_address)
 
 
 class TCPListener(socketserver.BaseRequestHandler):
@@ -38,18 +38,21 @@ class TCPListener(socketserver.BaseRequestHandler):
     """
 
     def handle(self):
-        client_address = self.client_address
-        request = self.request
-        master = self.server.master
-        message = self.request.recv(2**16)
+        while True:
+            client_address = self.client_address
+            request = self.request
+            callback = self.server.callback
+            message = self.request.recv(2**16)
 
-        print(request)
-        print(client_address)
+            assert message != 0
 
-        print("┌ Recieved TCP message")
-        print("│ Source: {}:{}".format(*client_address))
-        print("│ ┌Message (bytes): '{}'".format(message))
-        print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+            print(request)
+            print(client_address)
 
-        code, *rest = byteutil.bytes2message(message)
-        master.onTCP(request, code, rest)
+            print("┌ Recieved TCP message")
+            print("│ Source: {}:{}".format(*client_address))
+            print("│ ┌Message (bytes): '{}'".format(message))
+            print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+
+            code, *rest = byteutil.bytes2message(message)
+            callback(request, code, rest, client_address)
