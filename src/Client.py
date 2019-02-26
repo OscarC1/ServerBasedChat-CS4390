@@ -110,8 +110,8 @@ class RunnableClient(BaseClient):
         response, serv_address_udp = net.awaitUDP(sock, 2**16)
         code, *rest = byteutil.bytes2bytemsg(response)  # rest includes raw int data here, don't stringify
 
-        if code == byteutil.x2bytes(Code.AUTH_FAIL):
-            raise PermissionError("Server rejected key authentication.")
+        if code == Code.AUTH_FAIL.value:
+            raise PermissionError("Server rejected key authentication with code", code)
 
         assert code == Code.AUTH_SUCCESS.value, "Got non-auth code {}".format(code)
         (token, server_tcp_port_bytes) = rest
@@ -138,6 +138,7 @@ class RunnableClient(BaseClient):
         # self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # serv_address_tcp = (server_ip, self.server_tcp_port)
 #         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.connect(serv_address_tcp)
 
@@ -150,11 +151,6 @@ class RunnableClient(BaseClient):
         )
         # Expect CONNECTED
 
-        self.ss_tcp = socketserver.TCPServer(self.tcp_socket.getsockname(), TCPListener, True)
-        self.ss_tcp.callback = self.onTCP
-        tcp_thread = threading.Thread(daemon=True, target=self.ss_tcp.serve_forever)
-        tcp_thread.start()
-
         message = net.awaitTCP(self.tcp_socket, 2**16)
         code, *rest = byteutil.bytes2message(message)
         assert code == Code.CONNECTED.value, "Got non-connect code {}".format(code)
@@ -162,9 +158,25 @@ class RunnableClient(BaseClient):
         print("Logged in successfully.")
         print(self.tcp_socket)
 
-    def onTCP(self, connection, code, args, client_address):
-        print("TCP HIT")
-        print(connection)
+        tcp_thread = threading.Thread(daemon=True, target=self.tcpListener, args=(self.tcp_socket, self.onTCP))
+        tcp_thread.start()
+
+    def tcpListener(self, sock, callback):
+        # self.listening = threading.Event()
+        sock.settimeout(None)
+        while True:
+            message = sock.recv(1024)
+            assert message
+
+            source_address = sock.getpeername()
+
+            print("┌ Recieved TCP message")
+            print("│ Source: {}:{}".format(*source_address))
+            print("│ ┌Message (bytes): {}".format(message))
+            print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+
+            code, *rest = byteutil.bytes2message(message)
+            callback(sock, code, rest, source_address)
 
     def tcp_say(self, *args):
         print("tcp say:", args)
@@ -185,7 +197,7 @@ class RunnableClient(BaseClient):
         )
         raise KeyboardInterrupt
 
-    def onTCP(self, connection, code, args):
+    def onTCP(self, connection, code, args, source_address):
         if False:
             pass
         else:
