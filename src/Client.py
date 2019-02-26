@@ -1,6 +1,6 @@
 #!/bin/python3
 """
-# Description: 
+# Description
 Client classes
 
 # Authors:
