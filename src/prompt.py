@@ -6,7 +6,8 @@ class Prompt(object):
         self.commands = {}
         self.aliases = {}
         self.registerCommand("help", self.cmd_help, ["?"], "Print help")
-        self.registerCommand("exit", self.cmd_exit, ["quit"], "Exit the prompt")
+        self.registerCommand("exit", self.cmd_exit, [
+                             "quit"], "Exit the prompt")
 
     def cmd_exit(self, *args):
         raise KeyboardInterrupt
@@ -50,14 +51,19 @@ class Command(object):
         self.callback = callback
         self.aliases = aliases
         if helpstr is None:
-            helpstr = "Run command {}".format(**locals())
+            helpstr = "Run command {name}".format(**locals())
         self.helpstr = helpstr
 
     def run(self, *args):
         return self.__call__(*args)
 
     def __call__(self, *args):
-        self.callback(*args)
+        try:
+            self.callback(*args)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+
 
 def test():
     def echo(*args):
@@ -67,6 +73,21 @@ def test():
     p.registerCommand("echo", echo, ['print'], "Repeat input")
 
     p()
+
+
+class Interactable(object):
+
+    def prompt(self):
+        p = Prompt()
+        for name in dir(self):
+            if name[0:4] == "cmd_" and hasattr(self.__getattribute__(name), '__call__'):
+                p.registerCommand(name[4:], self.__getattribute__(name))
+        p()
+
+    def __init__(self):
+        super().__init__()
+        self.prompt()
+
 
 if __name__ == "__main__":
     test()
