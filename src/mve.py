@@ -7,6 +7,7 @@ class Mve(prompt.Interactable):
     """docstring for Mve"""
 
     def __init__(self):
+        super(Mve, self).__init__(start=False)
         self.socket = socket.socket()
         print("Opened TCP socket on", self.socket.getsockname())
         self.target_port = None
@@ -70,5 +71,5 @@ def runner():
 
 
 if __name__ == "__main__":
-    runner()
-    # interactive()
+    # runner()
+    interactive()

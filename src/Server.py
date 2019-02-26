@@ -24,12 +24,12 @@ from listener import TCPListener
 from listener import UDPListener
 
 
-class BaseServer(object):
+class BaseServer():
 
     """A basic server with attributes."""
 
     def __init__(self, server_ip, port_udp, port_tcp):
-        super().__init__()
+        # super().__init__()
         self.ip = server_ip
         self.port_udp = port_udp
         self.port_tcp = port_tcp

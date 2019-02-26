@@ -14,29 +14,44 @@ import socket
 
 from Codes import Code
 from pprint import pprint
-from prompt import Prompt
+import prompt
 
 import socketserver
 from listener import TCPListener
 import threading
 
 
-class BaseClient(object):
+class BaseClient():
 
-    """A basic client with attributes"""
+    """A basic client with attributes
+    
+    Attributes:
+        id (str): Unique client ID
+    """
 
     def __init__(self, id):
-        super().__init__()
         self.id = id
         self._secret = None
 
     @property
     def secret(self):
+        """
+        Returns:
+            str: The client's secret key, if we know it. 
+        """
         if self._secret is None:
             self.loadSecret()
         return self._secret
         
     def loadSecret(self, gen_on_fail=False):
+        """Load our stored secret key from crypto
+        
+        Args:
+            gen_on_fail (bool, optional): Generate and save a new key if we don't already have one stored.
+        
+        Raises:
+            KeyError: We can't generate a new key, and we don't have one stored.
+        """
         try:
             self._secret = crypto.getKey(self.id)
             print("Loaded stored key for ID " + self.id)
@@ -47,22 +62,53 @@ class BaseClient(object):
                 raise e
 
     def genSecret(self):
+        """Generate a new secret key and store it in crypto
+        """
         new_secret = crypto.cRandom(128)
         crypto.storeKey(new_secret, self.id)
         print("New key generated for client ID " + self.id)
         self._secret = new_secret
 
 
-class RunnableClient(BaseClient):
+class RunnableClient(BaseClient, prompt.Interactable):
 
-    """A stateful client with user interaction"""
+    """A stateful client with user interaction
+    
+    Attributes:
+        server (Server): A BaseServer to connect our client to
+        server_tcp_port (int): The port number of our TCP connection
+        tcp_socket (Socket): The TCP socket cooresponding to the TCP connection with the server
+        token (str): Session token for authentication
+    """
+
+    def __init__(self, id):
+        prompt.Interactable.__init__(self, start=False)
+        # super().__init__(self)
+        BaseClient.__init__(self, id)
+
     def run(self, server):
+        """Run client interactively.
+        Load our secret, generating if needed.
+        Login, run prompt until user exits, then disconnect.
+        
+        Args:
+            server (BaseServer): BaseServer to connect our client to
+        """
         self.loadSecret(gen_on_fail=True)
         self.login(server)
         self.prompt()
         self.disconnect()
 
     def login(self, server):
+        """Attempt to login to the server and establish a TCP connection.
+        This is the UDP handshake process.
+        
+        Args:
+            server (BaseServer): Server target
+        
+        Raises:
+            PermissionError: Authentication failure
+        """
         # Store our associated server
         self.server = server
 
@@ -162,6 +208,13 @@ class RunnableClient(BaseClient):
         tcp_thread.start()
 
     def tcpListener(self, sock, callback):
+        """Listen for TCP messages on a socket and pass messages to a callback function.
+        This is a blocking call in an infinite loop; run this in a thread.
+        
+        Args:
+            sock (socket): TCP socket to listen
+            callback (func): Callback function with args (socket, code, args, source_address,)
+        """
         # self.listening = threading.Event()
         sock.settimeout(None)
         while True:
@@ -179,6 +232,11 @@ class RunnableClient(BaseClient):
             callback(sock, code, rest, source_address)
 
     def tcp_say(self, *args):
+        """Send a CHAT message 
+        
+        Args:
+            Message
+        """
         print("tcp say:", args)
         net.sendTCP(
             self.tcp_socket,
@@ -189,6 +247,14 @@ class RunnableClient(BaseClient):
         )
 
     def disconnect(self, *args):
+        """Disconnect from server and exit
+        
+        Args:
+            *args: None
+        
+        Raises:
+            KeyboardInterrupt: Disconnect signal
+        """
         net.sendTCP(
             self.tcp_socket,
             byteutil.message2bytes([
@@ -198,6 +264,14 @@ class RunnableClient(BaseClient):
         raise KeyboardInterrupt
 
     def onTCP(self, connection, code, args, source_address):
+        """Callback to handle TCP messages
+        
+        Args:
+            connection (socket): TCP socket of incomming message
+            code (Code): The protocol code of the message
+            args (list): The non-code parts of the message
+            source_address (ip, port): INET address of the message source
+        """
         if False:
             pass
         else:
@@ -207,7 +281,7 @@ class RunnableClient(BaseClient):
         """Interactive prompt
         """
 
-        p = Prompt()
+        p = prompt.Prompt()
         p.registerCommand(
             "codes",
             lambda *a: print("\n".join(c.__str__() for c in Code)),

@@ -75,18 +75,28 @@ def test():
     p()
 
 
-class Interactable(object):
+class Interactable():
 
-    def prompt(self):
+    def loadAutoprompt(self):
         p = Prompt()
         for name in dir(self):
-            if name[0:4] == "cmd_" and hasattr(self.__getattribute__(name), '__call__'):
-                p.registerCommand(name[4:], self.__getattribute__(name))
+            if name[0:len(self.prefix)] == self.prefix and hasattr(self.__getattribute__(name), '__call__'):
+                p.registerCommand(
+                    name[len(self.prefix):],
+                    self.__getattribute__(name),
+                    helpstr=self.__getattribute__(name).__doc__
+                )
+        return p
+
+    def prompt(self):
+        p = self.loadAutoprompt()
         p()
 
-    def __init__(self):
-        super().__init__()
-        self.prompt()
+    def __init__(self, prefix="cmd_", start=True):
+        # super(Interactable, self).__init__()
+        self.prefix = prefix
+        if start:
+            self.prompt()
 
 
 if __name__ == "__main__":
