@@ -86,6 +86,8 @@ class RunnableClient(BaseClient):
     #     # super().__init__(self)
     #     BaseClient.__init__(self, id)
 
+    # Connect, login, run
+
     def run(self, server):
         """Run client interactively.
         Load our secret, generating if needed.
@@ -132,7 +134,7 @@ class RunnableClient(BaseClient):
 
         # Expect CHALLENGE from server
         print("Awaiting CHALLENGE from server")
-        response, serv_address_udp = net.awaitUDP(sock, 2**16)
+        response, serv_address_udp = net.awaitUDP(sock, net.MSG_SIZE)
         code, rand = byteutil.bytes2message(response)
 
         assert code == Code.CHALLENGE.value, "Got non-challenge code {}".format(
@@ -214,46 +216,6 @@ class RunnableClient(BaseClient):
             daemon=True, target=self.tcpListener, args=(self.tcp_socket, self.onTCP))
         tcp_thread.start()
 
-    def tcpListener(self, sock, callback):
-        """Listen for TCP messages on a socket and pass messages to a callback function.
-        This is a blocking call in an infinite loop; run this in a thread.
-
-        Args:
-            sock (socket): TCP socket to listen
-            callback (func): Callback function with args (socket, code, args, source_address,)
-        """
-        # self.listening = threading.Event()
-        sock.settimeout(None)
-        while True:
-            message = sock.recv(1024)
-            assert message
-
-            source_address = sock.getpeername()
-
-            print("┌ Recieved TCP message")
-            print("│ Source: {}:{}".format(*source_address))
-            print("│ ┌Message (bytes): {}".format(message))
-            print("└ └Message (print): {}".format(
-                byteutil.formatBytesMessage(message)))
-
-            code, *rest = byteutil.bytes2message(message)
-            callback(sock, code, rest, source_address)
-
-    def tcp_say(self, *args):
-        """Send a CHAT message
-
-        Args:
-            Message
-        """
-        print("tcp say:", args)
-        net.sendTCP(
-            self.tcp_socket,
-            byteutil.message2bytes([
-                Code.CHAT,
-                " ".join(args)
-            ])
-        )
-
     def disconnect(self, *args):
         """Disconnect from server and exit
 
@@ -271,6 +233,33 @@ class RunnableClient(BaseClient):
         )
         raise KeyboardInterrupt
 
+    # TCP networking
+
+    def tcpListener(self, sock, callback):
+        """Listen for TCP messages on a socket and pass messages to a callback function.
+        This is a blocking call in an infinite loop; run this in a thread.
+
+        Args:
+            sock (socket): TCP socket to listen
+            callback (func): Callback function with args (socket, code, args, source_address,)
+        """
+        # self.listening = threading.Event()
+        sock.settimeout(None)
+        while True:
+            message = sock.recv(net.MSG_SIZE)
+            assert message
+
+            source_address = sock.getpeername()
+
+            print("┌ Recieved TCP message")
+            print("│ Source: {}:{}".format(*source_address))
+            print("│ ┌Message (bytes): {}".format(message))
+            print("└ └Message (print): {}".format(
+                byteutil.formatBytesMessage(message)))
+
+            code, *rest = byteutil.bytes2message(message)
+            callback(sock, code, rest, source_address)
+
     def onTCP(self, connection, code, args, source_address):
         """Callback to handle TCP messages
 
@@ -284,6 +273,23 @@ class RunnableClient(BaseClient):
             pass
         else:
             print("No behavior for TCP code", code)
+
+    # User interactivity
+
+    def tcp_say(self, *args):
+        """Send a CHAT message
+
+        Args:
+            Message
+        """
+        print("tcp say:", args)
+        net.sendTCP(
+            self.tcp_socket,
+            byteutil.message2bytes([
+                Code.CHAT,
+                " ".join(args)
+            ])
+        )
 
     def prompt(self):
         """Interactive prompt
