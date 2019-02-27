@@ -20,8 +20,8 @@ Team Members:
 | No   | Action                             | Responsible            | Deadline   | Resources Needed | Dependencies | Result                                                  | Completed | Issues                                                       |
 | ---- | ---------------------------------- | ---------------------- | ---------- | ---------------- | ------------ | ------------------------------------------------------- | --------- | ------------------------------------------------------------ |
 | 1    | Action Plan                        | SG, OC                 | 2019-02-26 | GitHub           | None         | Get idea of how tasks will be divided                   |           | Most of team is less experienced in Python - members will need to use resources to become familiar. |
-| 2    | UDP Transport and Protocol         | SG (, OC?)             |            | IDE              | None         | Messages for login / initiation of connections done     |           |                                                              |
-| 3    | Authentication and CK-A Encryption | SG (, OC?)             |            | IDE              | 2            | Clients can be authenticated; messages can be encrypted |           |                                                              |
+| 2    | UDP Transport and Protocol         | SG, OC if needed             |            | IDE              | None         | Messages for login / initiation of connections done     |           |                                                              |
+| 3    | Authentication and CK-A Encryption | SG, OC if needed             |            | IDE              | 2            | Clients can be authenticated; messages can be encrypted |           |                                                              |
 | 4    | TCP Tunneling                      | (worked on by SG?), OC |            | IDE              | 2,3          | Ready to implement client-client messaging              |           |                                                              |
 | 5    | Chat sessions                      | SG                     |            |                  |              |                                                         |           |                                                              |
 | 6    | Client Prompt and Messaging        | SG                     |            | IDE              | 2,3,4        | Chat between clients can be performed                   |           |                                                              |
@@ -52,7 +52,6 @@ Tam Nguyen has opted not to contribute to the group project and build a standalo
 - Server session handling (messaging, overhead, activity timer, etc)
 - History storage and retrieval
 - Clean up client UI
-
 
 
 Optimized/Real scenerio:
