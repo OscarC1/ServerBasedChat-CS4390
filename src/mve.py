@@ -22,6 +22,10 @@ class Mve(prompt.Interactable):
         self.socket.sendall(" ".join(args).encode('utf-8'))
 
     def cmd_await(self, *args):
+        """
+        Listen for connections. It's
+        a whole thing.
+        """
         def listen():
             connectionSocket, addr = self.socket.accept()
             while True:

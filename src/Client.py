@@ -24,7 +24,7 @@ import threading
 class BaseClient():
 
     """A basic client with attributes
-    
+
     Attributes:
         id (str): Unique client ID
     """
@@ -42,13 +42,13 @@ class BaseClient():
         if self._secret is None:
             self.loadSecret()
         return self._secret
-        
+
     def loadSecret(self, gen_on_fail=False):
         """Load our stored secret key from crypto
-        
+
         Args:
             gen_on_fail (bool, optional): Generate and save a new key if we don't already have one stored.
-        
+
         Raises:
             KeyError: We can't generate a new key, and we don't have one stored.
         """
@@ -70,10 +70,10 @@ class BaseClient():
         self._secret = new_secret
 
 
-class RunnableClient(BaseClient, prompt.Interactable):
+class RunnableClient(BaseClient):
 
     """A stateful client with user interaction
-    
+
     Attributes:
         server (Server): A BaseServer to connect our client to
         server_tcp_port (int): The port number of our TCP connection
@@ -81,16 +81,16 @@ class RunnableClient(BaseClient, prompt.Interactable):
         token (str): Session token for authentication
     """
 
-    def __init__(self, id):
-        prompt.Interactable.__init__(self, start=False)
-        # super().__init__(self)
-        BaseClient.__init__(self, id)
+    # def __init__(self, id):
+    #     prompt.Interactable.__init__(self, start=False)
+    #     # super().__init__(self)
+    #     BaseClient.__init__(self, id)
 
     def run(self, server):
         """Run client interactively.
         Load our secret, generating if needed.
         Login, run prompt until user exits, then disconnect.
-        
+
         Args:
             server (BaseServer): BaseServer to connect our client to
         """
@@ -135,7 +135,8 @@ class RunnableClient(BaseClient, prompt.Interactable):
         response, serv_address_udp = net.awaitUDP(sock, 2**16)
         code, rand = byteutil.bytes2message(response)
 
-        assert code == Code.CHALLENGE.value, "Got non-challenge code {}".format(code)
+        assert code == Code.CHALLENGE.value, "Got non-challenge code {}".format(
+            code)
 
         # Decrypt challenge with our secret
         response = crypto.a3(rand, self.secret)
@@ -154,12 +155,15 @@ class RunnableClient(BaseClient, prompt.Interactable):
         # Expect AUTH_SUCCESS or AUTH_FAIL from server
         print("Awaiting AUTH result from server")
         response, serv_address_udp = net.awaitUDP(sock, 2**16)
-        code, *rest = byteutil.bytes2bytemsg(response)  # rest includes raw int data here, don't stringify
+        # rest includes raw int data here, don't stringify
+        code, *rest = byteutil.bytes2bytemsg(response)
 
         if code == Code.AUTH_FAIL.value:
-            raise PermissionError("Server rejected key authentication with code", code)
+            raise PermissionError(
+                "Server rejected key authentication with code", code)
 
-        assert code == Code.AUTH_SUCCESS.value, "Got non-auth code {}".format(code)
+        assert code == Code.AUTH_SUCCESS.value, "Got non-auth code {}".format(
+            code)
         (token, server_tcp_port_bytes) = rest
 
         print("Closing UDP socket")
@@ -168,7 +172,8 @@ class RunnableClient(BaseClient, prompt.Interactable):
         # Establish TCP Connection
         print("Establishing TCP connection with cookie")
         self.token = token
-        self.server_tcp_port = int.from_bytes(server_tcp_port_bytes, byteorder='big')
+        self.server_tcp_port = int.from_bytes(
+            server_tcp_port_bytes, byteorder='big')
 
         # Create a TCP address with our old IP and our new port
         (server_ip, udp_port) = serv_address_udp
@@ -199,18 +204,20 @@ class RunnableClient(BaseClient, prompt.Interactable):
 
         message = net.awaitTCP(self.tcp_socket, 2**16)
         code, *rest = byteutil.bytes2message(message)
-        assert code == Code.CONNECTED.value, "Got non-connect code {}".format(code)
+        assert code == Code.CONNECTED.value, "Got non-connect code {}".format(
+            code)
 
         print("Logged in successfully.")
         print(self.tcp_socket)
 
-        tcp_thread = threading.Thread(daemon=True, target=self.tcpListener, args=(self.tcp_socket, self.onTCP))
+        tcp_thread = threading.Thread(
+            daemon=True, target=self.tcpListener, args=(self.tcp_socket, self.onTCP))
         tcp_thread.start()
 
     def tcpListener(self, sock, callback):
         """Listen for TCP messages on a socket and pass messages to a callback function.
         This is a blocking call in an infinite loop; run this in a thread.
-        
+
         Args:
             sock (socket): TCP socket to listen
             callback (func): Callback function with args (socket, code, args, source_address,)
@@ -226,14 +233,15 @@ class RunnableClient(BaseClient, prompt.Interactable):
             print("┌ Recieved TCP message")
             print("│ Source: {}:{}".format(*source_address))
             print("│ ┌Message (bytes): {}".format(message))
-            print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+            print("└ └Message (print): {}".format(
+                byteutil.formatBytesMessage(message)))
 
             code, *rest = byteutil.bytes2message(message)
             callback(sock, code, rest, source_address)
 
     def tcp_say(self, *args):
-        """Send a CHAT message 
-        
+        """Send a CHAT message
+
         Args:
             Message
         """
@@ -248,10 +256,10 @@ class RunnableClient(BaseClient, prompt.Interactable):
 
     def disconnect(self, *args):
         """Disconnect from server and exit
-        
+
         Args:
             *args: None
-        
+
         Raises:
             KeyboardInterrupt: Disconnect signal
         """
@@ -265,7 +273,7 @@ class RunnableClient(BaseClient, prompt.Interactable):
 
     def onTCP(self, connection, code, args, source_address):
         """Callback to handle TCP messages
-        
+
         Args:
             connection (socket): TCP socket of incomming message
             code (Code): The protocol code of the message
@@ -282,6 +290,7 @@ class RunnableClient(BaseClient, prompt.Interactable):
         """
 
         p = prompt.Prompt()
+        p.registerCommandsFromNamespace(self, "cmd_")
         p.registerCommand(
             "codes",
             lambda *a: print("\n".join(c.__str__() for c in Code)),
