@@ -4,14 +4,14 @@
 # regex matching
 import textwrap
 
+
 def _yes(*args):
     return True
+
 
 def _echo(s):
     return s
 
-def isCallable(f):
-    return hasattr(f, '__call__')
 
 class BasePrompt():
     """A prompt with no builtin commands.
@@ -89,7 +89,7 @@ class BasePrompt():
             mutilate (func): How to alter the function's name.
         """
         for f in funcs:
-            if isCallable(f) and matches(f):
+            if callable(f) and matches(f):
                 self.registerCommandFromFunc(f, mutilate)
 
     def registerCommandFromFunc(self, func, mutilate=_echo):
@@ -229,12 +229,16 @@ class Command(object):
         self.helpdoc = "== " + self.name + " ==\n" + helpstr
 
     def run(self, *args):
-        """Run the command with user arguments
+        """Call the bound function, catching exceptions.
         
         Args:
-            *args: args
+            *args: arguments
         """
-        return self.__call__(*args)
+        try:
+            self.callback(*args)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
 
     @property
     def helprow(self):
@@ -249,24 +253,15 @@ class Command(object):
         )
 
     def __call__(self, *args):
-        """Call the bound function, catching exceptions.
-        
-        Args:
-            *args: arguments
-        """
-        try:
-            self.callback(*args)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
+        return self.run(*args)
 
 
 class Interactable():
 
-    """Summary
+    """A class which automatically resolves cmd_ functions into a user prompt.
     
     Attributes:
-        prefix (TYPE): Description
+        prefix (str): Command prefix, default is "cmd_"
     """
     
     def __init__(self, prefix="cmd_", start=True):
