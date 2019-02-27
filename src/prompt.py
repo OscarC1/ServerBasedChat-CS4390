@@ -81,7 +81,7 @@ class BasePrompt():
     def registerCommandsFromFuncs(self, funcs, matches=_yes, mutilate=_echo):
         """Registers each callable in funcs that matches the function `matches`.
         Names them based on multilate.
-        See registerCommandsFromNamespace.
+        See chain starting at registerCommandsFromNamespace.
         
         Args:
             funcs (list): List containing callables. Can contain non-callables.
@@ -93,11 +93,12 @@ class BasePrompt():
                 self.registerCommandFromFunc(f, mutilate)
 
     def registerCommandFromFunc(self, func, mutilate=_echo):
-        """Summary
-        
+        """Register command from existing function.
+        See chain starting at registerCommandsFromNamespace.
+
         Args:
-            func (TYPE): Description
-            mutilate (TYPE, optional): Description
+            func (callable): Callable with signature f(*args)
+            mutilate (func): How to change the function name
         """
         self.registerCommand(
             mutilate(func.__name__),
@@ -106,7 +107,8 @@ class BasePrompt():
         )
 
     def run(self):
-        """Summary
+        """Run the prompt until user termination.
+        Prompt exits on KeyboardInterrupt or EOF.
         """
         import shlex
         try:
@@ -124,24 +126,21 @@ class BasePrompt():
             print("User interrupt.")
 
     def __call__(self):
-        """Summary
-        
-        Returns:
-            TYPE: Description
+        """Calls .run()
         """
         return self.run()
 
 
 class Prompt(BasePrompt):
-    """docstring for Prompt
+    """A prompt with builtin "help" and "exit" commands.
+    
+    Attributes:
+        aliases (dict): alias (str): command (Command)
+        commands (dict): name (str): command (Command)
+        pstr (str): The prompt string (i.e. '$ ')
     """
 
     def __init__(self, pstr="> "):
-        """Summary
-        
-        Args:
-            pstr (str, optional): Description
-        """
         super().__init__(pstr)
         self.registerCommandsFromNamespace(self, "cmd_")
 
@@ -207,7 +206,7 @@ class Prompt(BasePrompt):
 
 
 class Command(object):
-    """Summary
+    """A command object. Contains a function and metadata.
     
     Args:
         name (string): The name of the function, and the command the users types.
@@ -230,22 +229,18 @@ class Command(object):
         self.helpdoc = "== " + self.name + " ==\n" + helpstr
 
     def run(self, *args):
-        """Summary
+        """Run the command with user arguments
         
         Args:
-            *args: Description
-        
-        Returns:
-            TYPE: Description
+            *args: args
         """
         return self.__call__(*args)
 
     @property
     def helprow(self):
-        """Summary
-        
+        """
         Returns:
-            TYPE: Description
+            tuple: Help row
         """
         return (
             self.name,
@@ -254,10 +249,10 @@ class Command(object):
         )
 
     def __call__(self, *args):
-        """Summary
+        """Call the bound function, catching exceptions.
         
         Args:
-            *args: Description
+            *args: arguments
         """
         try:
             self.callback(*args)
