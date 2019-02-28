@@ -37,7 +37,7 @@ Client contacts server by
 
 Connection negotiation
 
-Server runs tcpAccept on an existing welcome socket
+Server runs tcpAccept on an existing welcome socket. This creates a new socket on the same port, bound to the client. 
 
 Client runs tcpConnect and connects 
 
