@@ -35,6 +35,16 @@ Client contacts server by
 
 ![1550859670069](assets/1550859670069.png)
 
+Connection negotiation
+
+Server runs tcpAccept on an existing welcome socket
+
+Client runs tcpConnect and connects 
+
+![1551373644542](assets/1551373644542.png)
+
+
+
 ## Multiplexing (7)
 
 ### UDP Demultiplexing
