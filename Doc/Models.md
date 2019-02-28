@@ -31,36 +31,15 @@ Server has a set of TCP sockets, all on the same TCP port.
 
 Server and client negotiate a TCP Connection
 
-​```mermaid
-graph LR;
-Client
-Server
-tcpc(TCP Connection)
-Client --> |TCP Socket C| tcpc
-Server --> |TCP Socket S| tcpc
-tcpc --> |TCP Socket C| Client
-tcpc --> |TCP Socket S| Server
 
-```
+
+Server creates a socketserver and serves forever on a thread
+
+Client creates a TCP socket and CONNECTS to the server address
 
 
 
-# Connection to the Server
-
-​```mermaid
-sequenceDiagram
-participant Client
-participant Server
-Client->>Server: UDP HELLO
-Server->Server: Verify client ID with subscriber list
-Server->>Client: UDP CHALLENGE
-Client->>Server: UDP RESPONSE
-Server->>Client: AUTH_SUCCESS(cookie, port)
-Client->Client: CK-A
-Client->>Server: TCP CONNECT(cookie, port)
-```
-
-# Client A initiates chat session to client B
+Client A initiates chat session to client B
 
 ```mermaid
 sequenceDiagram

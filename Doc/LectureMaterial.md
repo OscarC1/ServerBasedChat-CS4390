@@ -43,6 +43,8 @@ Client runs tcpConnect and connects
 
 ![1551373644542](assets/1551373644542.png)
 
+![1551373970372](assets/1551373970372.png)
+
 
 
 ## Multiplexing (7)
