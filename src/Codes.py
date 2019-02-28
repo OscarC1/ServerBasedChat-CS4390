@@ -45,3 +45,6 @@ def codeno(i):
         if c.value == i:
             return c
     raise KeyError
+
+def printCodes():
+    print("\n".join(c.__str__() for c in Code))

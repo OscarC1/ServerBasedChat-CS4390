@@ -1,6 +1,6 @@
 import byteutil
 import socketserver
-from net import MSG_SIZE
+from net import MSG_SIZE, reprTCPSocket
 
 
 class UDPListener(socketserver.BaseRequestHandler):
@@ -74,7 +74,10 @@ def tcpListen(sock, callback):
     sock.settimeout(None)
     while True:
         message = sock.recv(MSG_SIZE)
-        assert message
+        
+        if not message:
+            print("Closing socket on", reprTCPSocket(sock))
+            return
 
         source_address = sock.getpeername()
 

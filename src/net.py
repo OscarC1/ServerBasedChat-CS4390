@@ -22,6 +22,12 @@ def reprTCPSocket(sock):
     )
 
 
+def reprSocketServer(sockserv):
+    return "<(SocketServer listening on {sock})>".format(
+        sock=sockserv.socket.getsockname()
+    )
+
+
 def getOwnIP():
     for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
         family, __, __, __, address = addrinfo

@@ -12,7 +12,7 @@ import crypto
 import net
 import socket
 
-from Codes import Code
+from Codes import Code, printCodes
 from pprint import pprint
 import prompt
 
@@ -32,6 +32,7 @@ class BaseClient():
     def __init__(self, id):
         self.id = id
         self._secret = None
+        self.address = tuple()
 
     @property
     def secret(self):
@@ -210,7 +211,6 @@ class RunnableClient(BaseClient):
             code)
 
         print("Logged in successfully.")
-        print(self.tcp_socket)
 
         tcp_thread = threading.Thread(
             daemon=True, target=self.tcpListener, args=(self.tcp_socket, self.onTCP))
@@ -299,7 +299,7 @@ class RunnableClient(BaseClient):
         p.registerCommandsFromNamespace(self, "cmd_")
         p.registerCommand(
             "codes",
-            lambda *a: print("\n".join(c.__str__() for c in Code)),
+            printCodes,
             helpstr="Print protocol codes"
         )
         p.registerCommand(
