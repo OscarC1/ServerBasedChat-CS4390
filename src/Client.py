@@ -17,7 +17,7 @@ from pprint import pprint
 import prompt
 
 import socketserver
-from listener import TCPListener
+from listener import tcpListen
 import threading
 
 
@@ -167,7 +167,7 @@ class RunnableClient(BaseClient):
 
         assert code == Code.AUTH_SUCCESS.value, "Got non-auth code {}".format(
             code)
-        (token, server_tcp_port_bytes) = rest
+        (token, server_tcp_port) = rest
 
         print("Closing UDP socket")
         sock.close()
@@ -175,12 +175,10 @@ class RunnableClient(BaseClient):
         # Establish TCP Connection
         print("Establishing TCP connection with cookie")
         self.token = token
-        self.server_tcp_port = int.from_bytes(
-            server_tcp_port_bytes, byteorder='big')
 
         # Create a TCP address with our old IP and our new port
         (server_ip, udp_port) = serv_address_udp
-        serv_address_tcp = (server_ip, self.server_tcp_port)
+        serv_address_tcp = (server_ip, int(server_tcp_port))
 
         # print("Starting up TCP listener")
         # self.tcp_server = socketserver.TCPServer(src_address, TCPListener)
@@ -193,7 +191,7 @@ class RunnableClient(BaseClient):
         # serv_address_tcp = (server_ip, self.server_tcp_port)
 #         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.tcp_socket = net.newTCPSocket()
         self.tcp_socket.connect(serv_address_tcp)
 
         net.sendTCP(
@@ -213,7 +211,7 @@ class RunnableClient(BaseClient):
         print("Logged in successfully.")
 
         tcp_thread = threading.Thread(
-            daemon=True, target=self.tcpListener, args=(self.tcp_socket, self.onTCP))
+            daemon=True, target=tcpListen, args=(self.tcp_socket, self.onTCP))
         tcp_thread.start()
 
     def disconnect(self, *args):
@@ -276,7 +274,7 @@ class RunnableClient(BaseClient):
 
     # User interactivity
 
-    def tcp_say(self, *args):
+    def cmd_say(self, *args):
         """Send a CHAT message
 
         Args:
@@ -290,6 +288,13 @@ class RunnableClient(BaseClient):
                 " ".join(args)
             ])
         )
+
+    def cmd_panic(self, *args):
+        """
+        Terminate without cleaning up.
+        """
+        import os
+        os.abort()
 
     def prompt(self):
         """Interactive prompt
@@ -306,11 +311,6 @@ class RunnableClient(BaseClient):
             "vars",
             lambda *a: pprint(vars(self)),
             helpstr="Show own variables"
-        )
-        p.registerCommand(
-            "say",
-            self.tcp_say,
-            helpstr="Say"
         )
         p.registerCommand(
             "disconnect",

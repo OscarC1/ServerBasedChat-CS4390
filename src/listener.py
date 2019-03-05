@@ -73,9 +73,14 @@ def tcpListen(sock, callback):
     # self.listening = threading.Event()
     sock.settimeout(None)
     while True:
-        message = sock.recv(MSG_SIZE)
+        try:
+            message = sock.recv(MSG_SIZE)
+        except OSError as e:
+            if e.errno == 9:  # Bad file descriptor
+                return
         
         if not message:
+            print("Detected null message")
             print("Closing socket on", reprTCPSocket(sock))
             return
 

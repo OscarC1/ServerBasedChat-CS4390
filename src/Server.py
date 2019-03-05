@@ -9,6 +9,7 @@ Server classes
 
 import byteutil
 import net
+import socket
 import socketserver
 import threading
 
@@ -22,6 +23,7 @@ from Client import BaseClient as Client
 
 from listener import TCPListener
 from listener import UDPListener
+from listener import tcpListen
 
 
 class BaseServer():
@@ -40,20 +42,36 @@ class RunnableServer(BaseServer):
     """A stateful server with user interaction"""
 
     def run(self):
-        print("Starting server on {}:{}".format(self.ip, self.port_udp))
-
         self.login_handles = dict()
         self.challenge_handles = dict()
 
         self.connections_by_id = dict()
         self.clients_by_address = dict()
 
+        print("Starting UDP server on {}:{}".format(self.ip, self.port_udp))
         ss_udp = socketserver.UDPServer(('', self.port_udp), UDPListener)
         ss_udp.callback = self.onUDP
         udp_thread = threading.Thread(daemon=True, target=ss_udp.serve_forever)
         udp_thread.start()
 
+        tcp_welcome_thread = threading.Thread(daemon=True, target=self.tcpListen)
+        tcp_welcome_thread.start()
+
         self.prompt()
+
+    def tcpListen(self):
+        self.welcome_tcp = net.newTCPSocket()
+        self.welcome_tcp.bind((self.ip, 0,))
+        self.port_tcp = self.welcome_tcp.getsockname()[1]
+        self.welcome_tcp.listen(5)
+        print("Starting TCP server on {}:{}".format(self.ip, self.port_tcp))
+        while True:
+            connection, address = self.welcome_tcp.accept()
+            print("Tcp accepted", connection)
+            # Client should connect back, so no need to keep track of address here. 
+            tcp_thread = threading.Thread(
+                daemon=True, target=tcpListen, args=(connection, self.onTCP))
+            tcp_thread.start()
 
     def cmd_net(self, *args):
         print("Network status: ")
@@ -83,12 +101,22 @@ class RunnableServer(BaseServer):
     def startTCPConnection(self, udp_socket, client, client_address):
 
         # Configure TCP connection
-        print("Spinning up new TCP socket")
-        ss_tcp = socketserver.TCPServer(('', self.port_tcp), TCPListener)
-        ss_tcp.callback = self.onTCP
-        tcp_thread = threading.Thread(daemon=True, target=ss_tcp.serve_forever)
-        tcp_thread.start()
-        self.connections_by_id[client.id] = ss_tcp
+        # print("Spinning up new TCP socket")
+        # try:
+        #     client_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # except OSError as e:
+        #     if e.errno == 98:  # OSErorr 98: Address already in use
+        #         existing_client = self.clients_by_address[client_address]
+        #         self.disconnectClient(existing_client, client_address)
+        #         client_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     else:
+        #         raise
+
+        # client_tcp.bind(('', self.port_tcp,))
+        # client_tcp = client_tcp.accept()
+        # # client_tcp.connect(client_address)
+
+        # self.connections_by_id[client.id] = client_tcp
 
         print("Configuring TCP cookie")
         token = crypto.cRandom()
@@ -99,7 +127,7 @@ class RunnableServer(BaseServer):
             byteutil.message2bytes([
                 Code.AUTH_SUCCESS,
                 token,
-                self.port_tcp
+                str(self.port_tcp)
             ]),
             client_address
         )
@@ -116,6 +144,7 @@ class RunnableServer(BaseServer):
                 ])
             )
             # Register client
+            self.connections_by_id[client.id] = connection
             self.clients_by_address[client_address] = client
             # Cleanup
             self.login_handles.pop(token)
@@ -123,6 +152,20 @@ class RunnableServer(BaseServer):
             print("Bad login information")
             print("No token")
             print(token)
+
+    def disconnectClient(self, client, client_address):
+        client_tcp = self.connections_by_id[client.id]
+        print("Closing", client_tcp)
+
+        # TODO: Shut down properly
+        # client_tcp.shutdown()
+        client_tcp.close()
+
+        print("Unregistering client")
+        self.connections_by_id.pop(client.id)
+        self.clients_by_address.pop(client_address)
+
+        print("Disconnected client", client_address)
 
     def onTCP(self, connection, code, args, client_address):
         # Register new clients
@@ -141,20 +184,9 @@ class RunnableServer(BaseServer):
 
         # Act on client
         if code == Code.DISCONNECT.value:
+            # return
             print("Got TCP DISCONNECT message")
-
-            ss_tcp = self.connections_by_id[client.id]
-            print("Closing", ss_tcp)
-
-            # TODO: Shut down properly
-            # ss_tcp.shutdown()
-            ss_tcp.server_close()
-
-            print("Unregistering client")
-            self.connections_by_id.pop(client.id)
-            self.clients_by_address.pop(client_address)
-
-            print("Disconnected client", client_address)
+            self.disconnectClient(client, client_address)
 
         elif code == Code.CHAT.value:
             print("Got TCP CHAT message")

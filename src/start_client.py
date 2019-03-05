@@ -25,8 +25,10 @@ def main():
         our_client_id = args.id
     else:
         our_client_id = input("ID? > ")
-    RunnableClient(our_client_id).run(server)
-
-
+    try:
+        RunnableClient(our_client_id).run(server)
+    except KeyboardInterrupt:
+        pass
+    
 if __name__ == "__main__":
     main()
