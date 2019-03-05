@@ -1,6 +1,7 @@
 import socket
 import prompt
 import threading
+from sys import byteorder
 
 
 class Mve(prompt.Interactable):
@@ -13,29 +14,43 @@ class Mve(prompt.Interactable):
         self.target_port = None
 
     def cmd_bind(self, *args):
+        """Create socket, bind. """
         self.socket = socket.socket()
         self.socket.bind(('localhost', 0,))
         print("Hosting TCP on address", self.socket.getsockname())
+        ip, port = self.socket.getsockname()
+        print(port, type(port))
+        with open("port", "wb") as portfile:
+            portfile.write(port.to_bytes(8, byteorder))
         return self.socket
 
     def cmd_send(self, *args):
+        """Send a message along socket."""
         self.socket.sendall(" ".join(args).encode('utf-8'))
 
     def cmd_await(self, *args):
         """
-        Listen for connections. It's
-        a whole thing.
+        Listen for connections. Threaded.
         """
         def listen():
             connectionSocket, addr = self.socket.accept()
             while True:
-                message = connectionSocket.recv(1024)
+                message = connectionSocket.recv(8)
                 if message:
                     print(message.decode('utf-8'))
-        self.socket.listen(5)
+                else:
+                    break
+        self.socket.listen(2)
         threading.Thread(target=listen).start()
 
+    def cmd_autocon(self, *args):
+        """Automatically connect to a port"""
+        with open("port", "rb") as portfile:
+            portno = int.from_bytes(portfile.read(), byteorder)
+        self.cmd_connect(portno)
+
     def cmd_connect(self, *args):
+        """Connect to host at port PORT"""
         (self.target_port,) = args
         print("Connecting to port", self.target_port)
         self.socket.connect(('localhost', int(self.target_port),))
