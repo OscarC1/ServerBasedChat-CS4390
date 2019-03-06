@@ -171,8 +171,8 @@ class Prompt(BasePrompt):
         """
 
         if len(args) == 0:
-            alen = max([0] + [len(k) for k in self.commands.keys()]) + 2
-            blen = max([0] + [len(k) for k in self.aliases.keys()]) + 2
+            alen = max([len("command")] + [len(k) for k in self.commands.keys()]) + 2
+            blen = max([len("alias")] + [len(k) for k in self.aliases.keys()]) + 2
 
             def printRow(*row):
                 """Summary
