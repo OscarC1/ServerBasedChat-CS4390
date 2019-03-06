@@ -1,6 +1,6 @@
 #!/bin/python3
 """
-# Description: 
+# Description:
 Server classes
 
 # Authors:
@@ -9,7 +9,7 @@ Server classes
 
 import byteutil
 import net
-import socket
+# import socket
 import socketserver
 import threading
 
@@ -21,7 +21,7 @@ import crypto
 
 from Client import BaseClient as Client
 
-from listener import TCPListener
+# from listener import TCPListener
 from listener import UDPListener
 from listener import tcpListen
 
@@ -41,6 +41,8 @@ class RunnableServer(BaseServer):
 
     """A stateful server with user interaction"""
 
+    # Networking internals
+
     def run(self):
         self.login_handles = dict()
         self.challenge_handles = dict()
@@ -54,7 +56,8 @@ class RunnableServer(BaseServer):
         udp_thread = threading.Thread(daemon=True, target=ss_udp.serve_forever)
         udp_thread.start()
 
-        tcp_welcome_thread = threading.Thread(daemon=True, target=self.tcpListen)
+        tcp_welcome_thread = threading.Thread(
+            daemon=True, target=self.tcpListen)
         tcp_welcome_thread.start()
 
         self.prompt()
@@ -68,35 +71,10 @@ class RunnableServer(BaseServer):
         while True:
             connection, address = self.welcome_tcp.accept()
             print("Tcp accepted", connection)
-            # Client should connect back, so no need to keep track of address here. 
+            # Client should connect back, so no need to keep track of address here.
             tcp_thread = threading.Thread(
                 daemon=True, target=tcpListen, args=(connection, self.onTCP))
             tcp_thread.start()
-
-    def cmd_net(self, *args):
-        print("Network status: ")
-        print("UDP: \t{}:{}".format(self.ip, self.port_udp))
-        print("TCP: \t{}:{}".format(self.ip, self.port_tcp))
-        print("Active TCP connections: ")
-        for key, server in self.connections_by_id.items():
-            print(key, net.reprSocketServer(server), sep="\t")
-
-    def prompt(self):
-        p = Prompt()
-        p.registerCommandsFromNamespace(self, "cmd_")
-        p.registerCommand(
-            "codes",
-            printCodes,
-            helpstr="Print protocol codes"
-        )
-        p.registerCommand(
-            "vars",
-            lambda *a: pprint(vars(self)),
-            helpstr="Show own variables"
-        )
-        p()
-
-        # raise NotImplementedError
 
     def startTCPConnection(self, udp_socket, client, client_address):
 
@@ -167,6 +145,8 @@ class RunnableServer(BaseServer):
 
         print("Disconnected client", client_address)
 
+    # Callbacks and reactions
+
     def onTCP(self, connection, code, args, client_address):
         # Register new clients
         if code == Code.CONNECT.value:
@@ -193,7 +173,7 @@ class RunnableServer(BaseServer):
             (message,) = args
             print(message)
             net.sendTCP(
-                connection, 
+                connection,
                 byteutil.message2bytes([
                     Code.CHAT,
                     "Hi back"
@@ -249,3 +229,32 @@ class RunnableServer(BaseServer):
             )
         else:
             print("No behavior for UDP code", code)
+
+    # Chat server
+
+    # User prompt
+
+    def prompt(self):
+        p = Prompt()
+        p.registerCommandsFromNamespace(self, "cmd_")
+        p.registerCommand(
+            "codes",
+            printCodes,
+            helpstr="Print protocol codes"
+        )
+        p.registerCommand(
+            "vars",
+            lambda *a: pprint(vars(self)),
+            helpstr="Show own variables"
+        )
+        p()
+
+        # raise NotImplementedError
+
+    def cmd_net(self, *args):
+        print("Network status: ")
+        print("UDP: \t{}:{}".format(self.ip, self.port_udp))
+        print("TCP: \t{}:{}".format(self.ip, self.port_tcp))
+        print("Active TCP connections: ")
+        for key, sock in self.connections_by_id.items():
+            print(key, net.reprTCPSocket(sock), sep="\t")

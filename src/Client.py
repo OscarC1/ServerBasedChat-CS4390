@@ -274,28 +274,6 @@ class RunnableClient(BaseClient):
 
     # User interactivity
 
-    def cmd_say(self, *args):
-        """Send a CHAT message
-
-        Args:
-            Message
-        """
-        print("tcp say:", args)
-        net.sendTCP(
-            self.tcp_socket,
-            byteutil.message2bytes([
-                Code.CHAT,
-                " ".join(args)
-            ])
-        )
-
-    def cmd_panic(self, *args):
-        """
-        Terminate without cleaning up.
-        """
-        import os
-        os.abort()
-
     def prompt(self):
         """Interactive prompt
         """
@@ -318,3 +296,25 @@ class RunnableClient(BaseClient):
             helpstr="Disconnect session"
         )
         p()
+
+    def cmd_say(self, *args):
+        """Send a CHAT message
+
+        Args:
+            Message
+        """
+        print("tcp say:", args)
+        net.sendTCP(
+            self.tcp_socket,
+            byteutil.message2bytes([
+                Code.CHAT,
+                " ".join(args)
+            ])
+        )
+
+    def cmd_panic(self, *args):
+        """
+        Terminate without cleaning up.
+        """
+        import os
+        os.abort()
