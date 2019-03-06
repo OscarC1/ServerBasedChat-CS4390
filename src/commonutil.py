@@ -1,5 +1,5 @@
-
-NULL_BYTE = bytes(1)
-
-def str2bytes(string):
-    return bytes(string.encode('utf-8'))
+def where(l, m):
+    for e in l:
+        if m(e):
+            return e
+    raise ValueError()

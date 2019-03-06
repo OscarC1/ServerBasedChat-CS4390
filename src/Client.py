@@ -15,8 +15,7 @@ import socket
 from Codes import Code, printCodes
 from pprint import pprint
 import prompt
-
-import socketserver
+# import socketserver
 from listener import tcpListen
 import threading
 
@@ -33,6 +32,12 @@ class BaseClient():
         self.id = id
         self._secret = None
         self.address = tuple()
+        self.session_partner = None
+        self.session_id = None
+
+    @property
+    def availible(self):
+        return self.session_partner is None
 
     @property
     def secret(self):
@@ -267,8 +272,12 @@ class RunnableClient(BaseClient):
             args (list): The non-code parts of the message
             source_address (ip, port): INET address of the message source
         """
-        if False:
-            pass
+        if code == Code.CHAT_STARTED.value:
+            (sessid, clientid,) = args
+            self.session_partner = clientid
+            self.session_id = sessid
+
+            print("Chat started with user", clientid)
         else:
             print("No behavior for TCP code", code)
 
@@ -278,7 +287,7 @@ class RunnableClient(BaseClient):
         """Interactive prompt
         """
 
-        p = prompt.Prompt()
+        self.p = p = prompt.Prompt()
         p.registerCommandsFromNamespace(self, "cmd_")
         p.registerCommand(
             "codes",
@@ -311,6 +320,21 @@ class RunnableClient(BaseClient):
                 " ".join(args)
             ])
         )
+
+    def cmd_chat(self, *args):
+        """Start a chat session with another user.
+
+        Args: client-id
+        """
+        (client_id_b,) = args
+        net.sendTCP(
+            self.tcp_socket,
+            byteutil.message2bytes([
+                Code.CHAT_REQUEST,
+                client_id_b
+            ])
+        )
+
 
     def cmd_panic(self, *args):
         """

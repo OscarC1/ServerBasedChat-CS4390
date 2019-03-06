@@ -114,6 +114,8 @@ class BasePrompt():
         try:
             while True:
                 inp = shlex.split(input(self.pstr))
+                if not inp:
+                    continue
                 name = inp[0]
                 match = self.commands.get(name) or self.aliases.get(name)
                 if match:

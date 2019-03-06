@@ -16,6 +16,7 @@ import threading
 from Codes import Code, printCodes
 from pprint import pprint
 from prompt import Prompt
+from itertools import permutations
 
 import crypto
 
@@ -179,6 +180,44 @@ class RunnableServer(BaseServer):
                     "Hi back"
                 ])
             )
+        elif code == Code.CHAT_REQUEST.value:
+            """
+            If the server determines client-B is connected and not
+            already engaged in another chat session, the server sends CHAT_STARTED(session-ID,
+            Client-ID-B) to client A, and CHAT_STARTED(session-ID, Client-ID-A) to client B. Client A
+            and Client B are now engaged in a chat session and can send chat messages with each
+            other, through the server. The clients display “Chat started” to the end user at A and B. If
+            client B is not available, the server sends UNREACHABLE (Client-ID-B) to client A
+            """
+            print("Got chat request")
+            (client_id_b,) = args
+            print(client.id, "->", client_id_b)
+
+            # Check if client b is connected and availible
+            try:
+                (client_b,) = [c for (k, c) in self.clients_by_address.items() if c.id == client_id_b and c.availible]
+                print(client_b)
+
+                # Create a session
+                client.session_partner = client_b
+                client_b.session_partner = client
+                # Inform clients of results
+                for (c1, c2) in permutations([client, client_b]):
+                    net.sendTCP(
+                        self.connections_by_id[c1.id],
+                        byteutil.message2bytes([
+                            Code.CHAT_STARTED,
+                            c2.id,
+                            c2.id,
+                        ])
+                    )
+
+            except ValueError:
+                # Client B is not connected
+                print("No such client availible")
+                return
+
+
         else:
             print("No behavior for TCP code", code)
 
