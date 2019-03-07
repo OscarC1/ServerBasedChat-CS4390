@@ -208,7 +208,7 @@ class RunnableServer(BaseServer):
                         self.connections_by_id[c1.id],
                         byteutil.message2bytes([
                             Code.CHAT_STARTED,
-                            c2.id,
+                            b'*',
                             c2.id,
                         ])
                     )
@@ -233,7 +233,7 @@ class RunnableServer(BaseServer):
                     self.connections_by_id[c1.id],
                     byteutil.message2bytes([
                         Code.END_NOTIF,
-                        c2.id,
+                        b'*',
                     ])
                 )
         else:

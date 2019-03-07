@@ -30,7 +30,7 @@ def reprSocketServer(sockserv):
 
 def getOwnIP():
     return ''
-    
+
     # for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
     #     family, __, __, __, address = addrinfo
     #     if family == socket.AddressFamily.AF_INET:
@@ -38,10 +38,11 @@ def getOwnIP():
 
 
 def sendUDP(sock, message, dest_address):
-    print("┌ Sending UDP message to server")
-    print("│ Server: {}:{}".format(*dest_address))
-    print("│ ┌Message (bytes): '{}'".format(message))
-    print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+    if SHOW_NET_INFO:
+        print("┌ Sending UDP message to server")
+        print("│ Server: {}:{}".format(*dest_address))
+        print("│ ┌Message (bytes): '{}'".format(message))
+        print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
 
     try:
         sock.sendto(message, dest_address)
@@ -53,9 +54,10 @@ def sendUDP(sock, message, dest_address):
 
 
 def sendTCP(sock, message):
-    print("┌ Sending TCP message via socket", reprTCPSocket(sock))
-    print("│ ┌Message (bytes): '{}'".format(message))
-    print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+    if SHOW_NET_INFO:
+        print("┌ Sending TCP message via socket", reprTCPSocket(sock))
+        print("│ ┌Message (bytes): '{}'".format(message))
+        print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
 
     try:
         sock.sendall(message)
@@ -85,3 +87,4 @@ SERVER_UDP_PORT = 64
 CLIENT_UDP_PORT = 65
 SERVER_TCP_PORT = 66
 SOCK_TIMEOUT = 1
+SHOW_NET_INFO = False

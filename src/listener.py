@@ -1,6 +1,6 @@
 import byteutil
 import socketserver
-from net import MSG_SIZE, reprTCPSocket
+from net import MSG_SIZE, reprTCPSocket, SHOW_NET_INFO
 
 
 class UDPListener(socketserver.BaseRequestHandler):
@@ -21,10 +21,11 @@ class UDPListener(socketserver.BaseRequestHandler):
         print(request)
         print(client_address)
 
-        print("┌ Recieved UDP message")
-        print("│ Source: {}:{}".format(*client_address))
-        print("│ ┌Message (bytes): '{}'".format(message))
-        print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+        if SHOW_NET_INFO:
+            print("┌ Recieved UDP message")
+            print("│ Source: {}:{}".format(*client_address))
+            print("│ ┌Message (bytes): '{}'".format(message))
+            print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
 
         code, *rest = byteutil.bytes2message(message)
         callback(connection, code, rest, client_address)
@@ -86,11 +87,12 @@ def tcpListen(sock, callback):
 
         source_address = sock.getpeername()
 
-        print("┌ Recieved TCP message")
-        print("│ Source: {}:{}".format(*source_address))
-        print("│ ┌Message (bytes): {}".format(message))
-        print("└ └Message (print): {}".format(
-            byteutil.formatBytesMessage(message)))
+        if SHOW_NET_INFO:
+            print("┌ Recieved TCP message")
+            print("│ Source: {}:{}".format(*source_address))
+            print("│ ┌Message (bytes): {}".format(message))
+            print("└ └Message (print): {}".format(
+                byteutil.formatBytesMessage(message)))
 
         code, *rest = byteutil.bytes2message(message)
         callback(sock, code, rest, source_address)

@@ -4,6 +4,9 @@
 # regex matching
 import textwrap
 
+from prompt_toolkit import prompt
+from prompt_toolkit.patch_stdout import patch_stdout
+
 
 def _yes(*args):
     return True
@@ -117,7 +120,8 @@ class BasePrompt():
         import shlex
         try:
             while True:
-                rawin = input(self.pstr)
+                with patch_stdout():
+                    rawin = prompt(self.pstr)  #  prompt(self.pstr)  # 
                 if self.override:
                     # Overridden command handling behavior
                     self.override(rawin)
