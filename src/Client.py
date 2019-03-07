@@ -107,13 +107,20 @@ class RunnableClient(BaseClient):
         self.prompt()
         self.disconnect()
 
+    def sendTCP(self, message):
+        assert self.tcp_socket
+        return net.sendTCP(
+            self.tcp_socket,
+            byteutil.message2bytes(message)
+        )
+
     def login(self, server):
         """Attempt to login to the server and establish a TCP connection.
         This is the UDP handshake process.
-        
+
         Args:
             server (BaseServer): Server target
-        
+
         Raises:
             PermissionError: Authentication failure
         """
@@ -199,13 +206,10 @@ class RunnableClient(BaseClient):
         self.tcp_socket = net.newTCPSocket()
         self.tcp_socket.connect(serv_address_tcp)
 
-        net.sendTCP(
-            self.tcp_socket,
-            byteutil.message2bytes([
-                Code.CONNECT,
-                token
-            ])
-        )
+        self.sendTCP([
+            Code.CONNECT,
+            token
+        ])
         # Expect CONNECTED
 
         message = net.awaitTCP(self.tcp_socket, 2**16)
@@ -215,8 +219,12 @@ class RunnableClient(BaseClient):
 
         print("Logged in successfully.")
 
+        def _listenUntilExit():
+            tcpListen(self.tcp_socket, self.onTCP)
+            self.disconnect(None)
+
         tcp_thread = threading.Thread(
-            daemon=True, target=tcpListen, args=(self.tcp_socket, self.onTCP))
+            daemon=True, target=_listenUntilExit)
         tcp_thread.start()
 
     def disconnect(self, *args):
@@ -228,40 +236,38 @@ class RunnableClient(BaseClient):
         Raises:
             KeyboardInterrupt: Disconnect signal
         """
-        net.sendTCP(
-            self.tcp_socket,
-            byteutil.message2bytes([
-                Code.DISCONNECT
-            ])
-        )
+        self.sendTCP([
+            Code.DISCONNECT
+        ])
+        self.p.cmd_exit(None)
         raise KeyboardInterrupt
 
     # TCP networking
 
-    def tcpListener(self, sock, callback):
-        """Listen for TCP messages on a socket and pass messages to a callback function.
-        This is a blocking call in an infinite loop; run this in a thread.
+    # def tcpListener(self, sock, callback):
+    #     """Listen for TCP messages on a socket and pass messages to a callback function.
+    #     This is a blocking call in an infinite loop; run this in a thread.
 
-        Args:
-            sock (socket): TCP socket to listen
-            callback (func): Callback function with args (socket, code, args, source_address,)
-        """
-        # self.listening = threading.Event()
-        sock.settimeout(None)
-        while True:
-            message = sock.recv(net.MSG_SIZE)
-            assert message
+    #     Args:
+    #         sock (socket): TCP socket to listen
+    #         callback (func): Callback function with args (socket, code, args, source_address,)
+    #     """
+    #     # self.listening = threading.Event()
+    #     sock.settimeout(None)
+    #     while True:
+    #         message = sock.recv(net.MSG_SIZE)
+    #         assert message
 
-            source_address = sock.getpeername()
+    #         source_address = sock.getpeername()
 
-            print("┌ Recieved TCP message")
-            print("│ Source: {}:{}".format(*source_address))
-            print("│ ┌Message (bytes): {}".format(message))
-            print("└ └Message (print): {}".format(
-                byteutil.formatBytesMessage(message)))
+    #         print("┌ Recieved TCP message")
+    #         print("│ Source: {}:{}".format(*source_address))
+    #         print("│ ┌Message (bytes): {}".format(message))
+    #         print("└ └Message (print): {}".format(
+    #             byteutil.formatBytesMessage(message)))
 
-            code, *rest = byteutil.bytes2message(message)
-            callback(sock, code, rest, source_address)
+    #         code, *rest = byteutil.bytes2message(message)
+    #         callback(sock, code, rest, source_address)
 
     def onTCP(self, connection, code, args, source_address):
         """Callback to handle TCP messages
@@ -278,9 +284,39 @@ class RunnableClient(BaseClient):
             self.session_id = sessid
 
             print("Chat started with user", clientid)
+
+            self.p.override = self.onChatInput
+            self.p.pstr = "{} -> {} > ".format(self.id, clientid)
+        elif code == Code.END_NOTIF.value:
+            (sessid,) = args
+            self.session_partner = None
+            self.session_id = None
+
+            print("Chat terminated.")
+
+            self.p.override = None
+            self.p.pstr = "{} > ".format(self.id)
+
+        elif code == Code.UNREACHABLE.value:
+            print("Cannot connect.")
+        elif code == Code.CHAT.value:
+            (message,) = args
+            print(self.session_partner + ":", message)
+
         else:
             print("No behavior for TCP code", code)
 
+    def onChatInput(self, inp):
+        if inp.lower() == "end chat":
+            self.sendTCP([
+                Code.END_REQUEST
+            ])
+        elif inp:
+            self.sendTCP([
+                Code.CHAT,
+                inp
+            ])
+            print(self.id + ":", inp)
     # User interactivity
 
     def prompt(self):
@@ -288,6 +324,7 @@ class RunnableClient(BaseClient):
         """
 
         self.p = p = prompt.Prompt()
+        p.pstr = "{} > ".format(self.id)
         p.registerCommandsFromNamespace(self, "cmd_")
         p.registerCommand(
             "codes",
@@ -313,13 +350,10 @@ class RunnableClient(BaseClient):
             Message
         """
         print("tcp say:", args)
-        net.sendTCP(
-            self.tcp_socket,
-            byteutil.message2bytes([
-                Code.CHAT,
-                " ".join(args)
-            ])
-        )
+        self.sendTCP([
+            Code.CHAT,
+            " ".join(args)
+        ])
 
     def cmd_chat(self, *args):
         """Start a chat session with another user.
@@ -327,14 +361,10 @@ class RunnableClient(BaseClient):
         Args: client-id
         """
         (client_id_b,) = args
-        net.sendTCP(
-            self.tcp_socket,
-            byteutil.message2bytes([
-                Code.CHAT_REQUEST,
-                client_id_b
-            ])
-        )
-
+        self.sendTCP([
+            Code.CHAT_REQUEST,
+            client_id_b
+        ])
 
     def cmd_panic(self, *args):
         """

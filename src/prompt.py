@@ -31,6 +31,7 @@ class BasePrompt():
         self.pstr = pstr
         self.commands = {}
         self.aliases = {}
+        self.override = None
         self.registerCommandsFromNamespace(self, "cmd_")
         # self.registerCommand("help", self.cmd_help, ["?"], "Print help")
         # self.registerCommand("exit", self.cmd_exit, [
@@ -89,8 +90,11 @@ class BasePrompt():
             mutilate (func): How to alter the function's name.
         """
         for f in funcs:
-            if callable(f) and matches(f):
-                self.registerCommandFromFunc(f, mutilate)
+            try:    
+                if callable(f) and matches(f):
+                    self.registerCommandFromFunc(f, mutilate)
+            except Exception as e:
+                print("Cannot register", f, "as function")
 
     def registerCommandFromFunc(self, func, mutilate=_echo):
         """Register command from existing function.
@@ -113,16 +117,22 @@ class BasePrompt():
         import shlex
         try:
             while True:
-                inp = shlex.split(input(self.pstr))
-                if not inp:
-                    continue
-                name = inp[0]
-                match = self.commands.get(name) or self.aliases.get(name)
-                if match:
-                    # Run command, if a command matches
-                    match(*inp[1:])
+                rawin = input(self.pstr)
+                if self.override:
+                    # Overridden command handling behavior
+                    self.override(rawin)
                 else:
-                    print("ERROR: No such command " + name)
+                    # Standard command handling
+                    inp = shlex.split(rawin)
+                    if not inp:
+                        continue
+                    name = inp[0]
+                    match = self.commands.get(name) or self.aliases.get(name)
+                    if match:
+                        # Run command, if a command matches
+                        match(*inp[1:])
+                    else:
+                        print("ERROR: No such command " + name)
         except (KeyboardInterrupt, EOFError) as e:
             # Catch Ctrl-C, Ctrl-D, and exit.
             print("User interrupt.")

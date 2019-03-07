@@ -173,11 +173,12 @@ class RunnableServer(BaseServer):
             print("Got TCP CHAT message")
             (message,) = args
             print(message)
+            recipient = self.connections_by_id[client.session_partner.id]
             net.sendTCP(
-                connection,
+                recipient,
                 byteutil.message2bytes([
                     Code.CHAT,
-                    "Hi back"
+                    message
                 ])
             )
         elif code == Code.CHAT_REQUEST.value:
@@ -215,9 +216,26 @@ class RunnableServer(BaseServer):
             except ValueError:
                 # Client B is not connected
                 print("No such client availible")
+                net.sendTCP(
+                    connection,
+                    byteutil.message2bytes([
+                        Code.UNREACHABLE
+                    ])
+                )
                 return
 
-
+        elif code == Code.END_REQUEST.value:
+            client_b = client.session_partner
+            client.session_partner = None
+            client_b.session_partner = None
+            for (c1, c2) in permutations([client, client_b]):
+                net.sendTCP(
+                    self.connections_by_id[c1.id],
+                    byteutil.message2bytes([
+                        Code.END_NOTIF,
+                        c2.id,
+                    ])
+                )
         else:
             print("No behavior for TCP code", code)
 
