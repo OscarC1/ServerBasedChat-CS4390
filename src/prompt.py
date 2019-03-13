@@ -4,10 +4,6 @@
 # regex matching
 import textwrap
 
-from prompt_toolkit import prompt
-from prompt_toolkit.patch_stdout import patch_stdout
-
-
 def _yes(*args):
     return True
 
@@ -117,29 +113,37 @@ class BasePrompt():
         """Run the prompt until user termination.
         Prompt exits on KeyboardInterrupt or EOF.
         """
-        import shlex
+        from prompt_toolkit import PromptSession
+        from prompt_toolkit.patch_stdout import patch_stdout
+        from prompt_toolkit.completion import WordCompleter
+
+        prompt_completer = WordCompleter(self.commands.keys())
+        psession = PromptSession(completer=prompt_completer, reserve_space_for_menu=3)
         try:
             while True:
                 with patch_stdout():
-                    rawin = prompt(self.pstr)  #  prompt(self.pstr)  # 
-                if self.override:
-                    # Overridden command handling behavior
-                    self.override(rawin)
-                else:
-                    # Standard command handling
-                    inp = shlex.split(rawin)
-                    if not inp:
-                        continue
-                    name = inp[0]
-                    match = self.commands.get(name) or self.aliases.get(name)
-                    if match:
-                        # Run command, if a command matches
-                        match(*inp[1:])
-                    else:
-                        print("ERROR: No such command " + name)
+                    rawin = psession.prompt(self.pstr)  # prompt(self.pstr)
+                    self.handleCommand(rawin)
         except (KeyboardInterrupt, EOFError) as e:
             # Catch Ctrl-C, Ctrl-D, and exit.
             print("User interrupt.")
+        finally:
+            # Cleanup
+            pass
+
+    def handleCommand(self, rawin):
+        # Standard command handling
+        import shlex
+        inp = shlex.split(rawin)
+        if not inp:
+            return
+        name = inp[0]
+        match = self.commands.get(name) or self.aliases.get(name)
+        if match:
+            # Run command, if a command matches
+            match(*inp[1:])
+        else:
+            print("ERROR: No such command " + name)
 
     def __call__(self):
         """Calls .run()

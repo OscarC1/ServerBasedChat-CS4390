@@ -174,13 +174,22 @@ class RunnableServer(BaseServer):
             (message,) = args
             print(message)
             recipient = self.connections_by_id[client.session_partner.id]
-            net.sendTCP(
-                recipient,
-                byteutil.message2bytes([
-                    Code.CHAT,
-                    message
-                ])
-            )
+            if recipient:
+                net.sendTCP(
+                    recipient,
+                    byteutil.message2bytes([
+                        Code.CHAT,
+                        message
+                    ])
+                )
+            else:
+                net.sendTCP(
+                    recipient,
+                    byteutil.message2bytes([
+                        Code.UNREACHABLE
+                    ])
+                )
+
         elif code == Code.CHAT_REQUEST.value:
             """
             If the server determines client-B is connected and not

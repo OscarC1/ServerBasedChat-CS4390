@@ -285,8 +285,13 @@ class RunnableClient(BaseClient):
 
             print("Chat started with user", clientid)
 
-            self.p.override = self.onChatInput
-            self.p.pstr = "{} -> {} > ".format(self.id, clientid)
+            # try:
+            #     self.ps.app.exit()
+            # except AssertionError:
+            #     pass
+            # print('Exited.')
+            # self.promptChat()
+
         elif code == Code.END_NOTIF.value:
             (sessid,) = args
             self.session_partner = None
@@ -294,8 +299,10 @@ class RunnableClient(BaseClient):
 
             print("Chat terminated.")
 
-            self.p.override = None
-            self.p.pstr = "{} > ".format(self.id)
+            # self.p.pstr = "> ".format(self.id)
+
+            # self.ps.app.exit()
+            # self.prompt()
 
         elif code == Code.UNREACHABLE.value:
             print("Cannot connect.")
@@ -319,10 +326,19 @@ class RunnableClient(BaseClient):
             print(self.id + ":", inp)
     # User interactivity
 
+    def bottomToolbar(self):
+        if self.session_partner:
+            return "[{}] Chatting with user '{}'. Send 'end chat' to disconnect.".format(self.id, self.session_partner)
+        else:
+            return "Logged in as '{}'. Type 'help' for help.".format(self.id)
+
     def prompt(self):
         """Interactive prompt
         """
-
+        from prompt_toolkit import PromptSession
+        from prompt_toolkit.completion import WordCompleter
+        from prompt_toolkit.patch_stdout import patch_stdout
+        
         self.p = p = prompt.Prompt()
         p.pstr = "{} > ".format(self.id)
         p.registerCommandsFromNamespace(self, "cmd_")
@@ -341,7 +357,49 @@ class RunnableClient(BaseClient):
             self.disconnect,
             helpstr="Disconnect session"
         )
-        p()
+
+        # prompt_completer = WordCompleter(self.p.commands.keys())
+        self.ps = PromptSession(
+            # completer=prompt_completer,
+            # reserve_space_for_menu=3,
+            bottom_toolbar=self.bottomToolbar
+        )
+        # self.prompt_event = threading.Event()
+        try:
+            while True:
+                with patch_stdout():
+                    rawin = self.ps.prompt(self.p.pstr)  # prompt(self.pstr)
+                    if self.session_partner:
+                        self.onChatInput(rawin)
+                    else:
+                        self.p.handleCommand(rawin)
+        except (KeyboardInterrupt, EOFError) as e:
+            # Catch Ctrl-C, Ctrl-D, and exit.
+            print("User interrupt.")
+        finally:
+            # Cleanup
+            pass
+
+    # def promptChat(self):
+    #     """Interactive prompt
+    #     """
+    #     from prompt_toolkit import PromptSession
+    #     from prompt_toolkit.patch_stdout import patch_stdout
+        
+    #     self.ps = PromptSession(
+    #         bottom_toolbar=self.bottomToolbar
+    #     )
+    #     try:
+    #         while True:
+    #             with patch_stdout():
+    #                 rawin = self.ps.prompt(self.p.pstr)  # prompt(self.pstr)
+    #                 self.onChatInput(rawin)
+    #     except (KeyboardInterrupt, EOFError) as e:
+    #         # Catch Ctrl-C, Ctrl-D, and exit.
+    #         print("User interrupt.")
+    #     finally:
+    #         # Cleanup
+    #         pass
 
     def cmd_say(self, *args):
         """Send a CHAT message
