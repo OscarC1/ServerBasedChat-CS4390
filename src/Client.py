@@ -336,7 +336,7 @@ class RunnableClient(BaseClient):
         """Interactive prompt
         """
         from prompt_toolkit import PromptSession
-        from prompt_toolkit.completion import WordCompleter
+        # from prompt_toolkit.completion import WordCompleter
         from prompt_toolkit.patch_stdout import patch_stdout
         
         self.p = p = prompt.Prompt()
@@ -365,6 +365,9 @@ class RunnableClient(BaseClient):
             bottom_toolbar=self.bottomToolbar
         )
         # self.prompt_event = threading.Event()
+
+        # We implement our own prompt system that differentiates between
+        # chat input and command input. 
         try:
             while True:
                 with patch_stdout():

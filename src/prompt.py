@@ -30,6 +30,7 @@ class BasePrompt():
         self.pstr = pstr
         self.commands = {}
         self.aliases = {}
+        self.custom_psession = None
         self.override = None
         self.registerCommandsFromNamespace(self, "cmd_")
         # self.registerCommand("help", self.cmd_help, ["?"], "Print help")
@@ -118,7 +119,10 @@ class BasePrompt():
         from prompt_toolkit.completion import WordCompleter
 
         prompt_completer = WordCompleter(self.commands.keys())
-        psession = PromptSession(completer=prompt_completer, reserve_space_for_menu=3)
+        if self.custom_psession:
+            psession = self.custom_psession
+        else:
+            psession = PromptSession(completer=prompt_completer, reserve_space_for_menu=3)
         try:
             while True:
                 with patch_stdout():
