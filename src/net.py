@@ -82,7 +82,7 @@ def awaitTCP(sock, size):
 
 
 UDP_MSG_SIZE = 2**12
-MSG_SIZE = 2**6
+MSG_SIZE = 2**12
 
 SERVER_IP = getOwnIP()  # "192.168.1.1"
 SERVER_UDP_PORT = 64
