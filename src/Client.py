@@ -20,6 +20,15 @@ from listener import tcpListen
 import threading
 
 
+def formatChatMessage(id, msg, id2=""):
+    return "{ident:>{size}} {msg}".format(
+        size=max(len(id), len(id2)),
+        ident="[{id}]".format(id=id),
+        msg=msg
+    )
+
+
+
 class BaseClient():
 
     """A basic client with attributes
@@ -308,7 +317,8 @@ class RunnableClient(BaseClient):
             print("Cannot connect.")
         elif code == Code.CHAT.value:
             (message,) = args
-            print(self.session_partner + ":", message)
+
+            print(formatChatMessage(self.session_partner, inp, self.id))
 
         else:
             print("No behavior for TCP code", code)
@@ -323,14 +333,14 @@ class RunnableClient(BaseClient):
                 Code.CHAT,
                 inp
             ])
-            print(self.id + ":", inp)
+            print(formatChatMessage(self.id, inp, self.session_partner))
     # User interactivity
 
     def bottomToolbar(self):
         if self.session_partner:
             return "[{}] Chatting with user '{}'. Send 'end chat' to disconnect.".format(self.id, self.session_partner)
         else:
-            return "Logged in as '{}'. Type 'help' for help.".format(self.id)
+            return "[{}] Type 'help' for help. 'chat [user]' to initiate chat.".format(self.id)
 
     def prompt(self):
         """Interactive prompt
@@ -362,7 +372,8 @@ class RunnableClient(BaseClient):
         self.ps = PromptSession(
             # completer=prompt_completer,
             # reserve_space_for_menu=3,
-            bottom_toolbar=self.bottomToolbar
+            bottom_toolbar=self.bottomToolbar,
+            erase_when_done=True
         )
         # self.prompt_event = threading.Event()
 
