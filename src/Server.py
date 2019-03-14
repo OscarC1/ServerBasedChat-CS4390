@@ -167,6 +167,15 @@ class RunnableServer(BaseServer):
         if code == Code.DISCONNECT.value:
             # return
             print("Got TCP DISCONNECT message")
+            if client.session_partner:
+                net.sendTCP(
+                    self.connections_by_id[client.session_partner.id],
+                    byteutil.message2bytes([
+                        Code.END_NOTIF,
+                        b'*',
+                    ])
+                )
+                client.session_partner.session_partner = None
             self.disconnectClient(client, client_address)
 
         elif code == Code.CHAT.value:
@@ -224,6 +233,7 @@ class RunnableServer(BaseServer):
 
             except ValueError:
                 # Client B is not connected
+                print(self.clients_by_address.items())
                 print("No such client availible")
                 net.sendTCP(
                     connection,
