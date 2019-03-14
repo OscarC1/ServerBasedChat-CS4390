@@ -22,6 +22,8 @@ import crypto
 
 from Client import BaseClient as Client
 
+import history
+
 # from listener import TCPListener
 from listener import UDPListener
 from listener import tcpListen
@@ -53,7 +55,6 @@ class RunnableServer(BaseServer):
 
         self.connections_by_id = dict()
         self.clients_by_address = dict()
-        self.history = dict()
 
         print("Starting UDP server on {}:{}".format(self.ip, self.port_udp))
         ss_udp = socketserver.UDPServer(('', self.port_udp), UDPListener)
@@ -188,7 +189,9 @@ class RunnableServer(BaseServer):
             print(message)
             recipient = self.connections_by_id[client.session_partner.id]
             if recipient:
-                self.history[getSessionId(client.id, client.session_partner.id)].append((client.id, message,))
+                session_id = getSessionId(client.id, client.session_partner.id)
+                history.append(session_id, client.id, message)
+
                 net.sendTCP(
                     recipient,
                     byteutil.message2bytes([
@@ -227,9 +230,6 @@ class RunnableServer(BaseServer):
                 client_b.session_partner = client
 
                 session_id = getSessionId(client.id, client_b.id)
-
-                if not self.history.get(session_id):
-                    self.history[session_id] = list()
 
                 # Inform clients of results
                 for (c1, c2) in permutations([client, client_b]):
@@ -270,8 +270,9 @@ class RunnableServer(BaseServer):
             (client_id_b,) = args
             session_id = getSessionId(client.id, client_id_b)
 
-            for (cid, msg) in self.history.get(session_id):
-                print(cid, msg)
+            for hist in history.get(session_id):
+                print(repr(hist))
+                (cid, msg) = hist
                 net.sendTCP(
                     connection,
                     byteutil.message2bytes([

@@ -156,11 +156,13 @@ class RunnableClient(BaseClient):
 
         # Expect CHALLENGE from server
         print("Awaiting CHALLENGE from server")
-        response, serv_address_udp = net.awaitUDP(sock, net.MSG_SIZE)
+        response, serv_address_udp = net.awaitUDP(sock, net.UDP_MSG_SIZE)
         code, rand = byteutil.bytes2message(response)
 
         assert code == Code.CHALLENGE.value, "Got non-challenge code {}".format(
             code)
+
+        print("Challenge rand:", rand)
 
         # Decrypt challenge with our secret
         response = crypto.a3(rand, self.secret)
@@ -178,7 +180,7 @@ class RunnableClient(BaseClient):
 
         # Expect AUTH_SUCCESS or AUTH_FAIL from server
         print("Awaiting AUTH result from server")
-        response, serv_address_udp = net.awaitUDP(sock, 2**16)
+        response, serv_address_udp = net.awaitUDP(sock, net.UDP_MSG_SIZE)
         # rest includes raw int data here, don't stringify
         code, *rest = byteutil.bytes2bytemsg(response)
 
@@ -319,6 +321,7 @@ class RunnableClient(BaseClient):
             (message,) = args
             print(formatChatMessage(self.session_partner, message, self.id))
         elif code == Code.HISTORY_RESP.value:
+            print(repr(args))
             (client_id_b, message) = args
             print(formatChatMessage(client_id_b, message))
         else:

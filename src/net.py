@@ -39,7 +39,7 @@ def getOwnIP():
 
 def sendUDP(sock, message, dest_address):
     if SHOW_NET_INFO:
-        print("┌ Sending UDP message to server")
+        print("┌ Sending UDP message")
         print("│ Server: {}:{}".format(*dest_address))
         print("│ ┌Message (bytes): '{}'".format(message))
         print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
@@ -80,7 +80,9 @@ def awaitTCP(sock, size):
     sock.settimeout(SOCK_TIMEOUT)
     return sock.recv(size)
 
-MSG_SIZE = 2**12
+
+UDP_MSG_SIZE = 2**12
+MSG_SIZE = 2**6
 
 SERVER_IP = getOwnIP()  # "192.168.1.1"
 SERVER_UDP_PORT = 64
