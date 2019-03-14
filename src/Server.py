@@ -38,6 +38,9 @@ class BaseServer():
         self.port_tcp = port_tcp
 
 
+def getSessionId(*ids):
+    return "_".join(sorted(ids))
+
 class RunnableServer(BaseServer):
 
     """A stateful server with user interaction"""
@@ -50,6 +53,7 @@ class RunnableServer(BaseServer):
 
         self.connections_by_id = dict()
         self.clients_by_address = dict()
+        self.history = dict()
 
         print("Starting UDP server on {}:{}".format(self.ip, self.port_udp))
         ss_udp = socketserver.UDPServer(('', self.port_udp), UDPListener)
@@ -184,6 +188,7 @@ class RunnableServer(BaseServer):
             print(message)
             recipient = self.connections_by_id[client.session_partner.id]
             if recipient:
+                self.history[getSessionId(client.id, client.session_partner.id)].append((client.id, message,))
                 net.sendTCP(
                     recipient,
                     byteutil.message2bytes([
@@ -220,13 +225,19 @@ class RunnableServer(BaseServer):
                 # Create a session
                 client.session_partner = client_b
                 client_b.session_partner = client
+
+                session_id = getSessionId(client.id, client_b.id)
+
+                if not self.history.get(session_id):
+                    self.history[session_id] = list()
+
                 # Inform clients of results
                 for (c1, c2) in permutations([client, client_b]):
                     net.sendTCP(
                         self.connections_by_id[c1.id],
                         byteutil.message2bytes([
                             Code.CHAT_STARTED,
-                            b'*',
+                            session_id,
                             c2.id,
                         ])
                     )
@@ -255,6 +266,21 @@ class RunnableServer(BaseServer):
                         b'*',
                     ])
                 )
+        elif code == Code.HISTORY_REQ.value:
+            (client_id_b,) = args
+            session_id = getSessionId(client.id, client_id_b)
+
+            for (cid, msg) in self.history.get(session_id):
+                print(cid, msg)
+                net.sendTCP(
+                    connection,
+                    byteutil.message2bytes([
+                        Code.HISTORY_RESP,
+                        cid,
+                        msg
+                    ])
+                )
+
         else:
             print("No behavior for TCP code", code)
 

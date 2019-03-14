@@ -182,7 +182,7 @@ class Prompt(BasePrompt):
 
     def cmd_help(self, *args):
         """Get information about commands (try "help help")
-        
+
         Usage:
             Run with no arguments to get a list
             of all availible commands.

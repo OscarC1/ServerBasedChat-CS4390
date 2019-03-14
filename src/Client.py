@@ -428,6 +428,18 @@ class RunnableClient(BaseClient):
             " ".join(args)
         ])
 
+    def cmd_history(self, *args):
+        """Request chat history between you and another user.
+        Args:
+            Other user id
+        """
+        (client_id_b,) = args
+        self.sendTCP([
+            Code.HISTORY_REQ,
+            client_id_b
+        ])
+
+
     def cmd_chat(self, *args):
         """Start a chat session with another user.
 
