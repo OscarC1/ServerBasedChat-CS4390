@@ -317,9 +317,10 @@ class RunnableClient(BaseClient):
             print("Cannot connect.")
         elif code == Code.CHAT.value:
             (message,) = args
-
-            print(formatChatMessage(self.session_partner, inp, self.id))
-
+            print(formatChatMessage(self.session_partner, message, self.id))
+        elif code == Code.HISTORY_RESP.value:
+            (client_id_b, message) = args
+            print(formatChatMessage(client_id_b, message))
         else:
             print("No behavior for TCP code", code)
 
