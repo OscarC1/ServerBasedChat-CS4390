@@ -90,8 +90,8 @@ class BasePrompt():
             mutilate (func): How to alter the function's name.
         """
         for f in funcs:
-            try:    
-                if callable(f) and matches(f):
+            try:
+                if callable(f) and (f is not self) and matches(f):
                     self.registerCommandFromFunc(f, mutilate)
             except Exception as e:
                 print("Cannot register", f, "as function")
