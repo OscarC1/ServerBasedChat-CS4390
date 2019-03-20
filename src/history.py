@@ -24,7 +24,12 @@ def append(session_id, sender, message):
 
 
 def get(session_id):
-    with open(getFile(session_id), "r", newline="\n") as histfile:
-        for line in histfile:
-            (cid, msg) = line.split(SEP)
-            yield (cid, msg)
+    pathToFile = getFile(session_id)
+    exists = os.path.isfile(pathToFile)
+    if exists:
+        with open(pathToFile, "r", newline="\n") as histfile:
+            for line in histfile:
+                (cid, msg) = line.split(SEP)
+                yield (cid, msg)
+    else:
+        yield ("No history found for that user.", "")

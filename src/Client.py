@@ -321,7 +321,7 @@ class RunnableClient(BaseClient):
             (message,) = args
             print(formatChatMessage(self.session_partner, message, self.id))
         elif code == Code.HISTORY_RESP.value:
-            print(repr(args))
+            #print(repr(args))
             (client_id_b, message) = args
             print(formatChatMessage(client_id_b, message))
         else:
@@ -436,6 +436,9 @@ class RunnableClient(BaseClient):
         Args:
             Other user id
         """
+        if len(args) == 0:
+            print("History: No user specified.")
+            return
         (client_id_b,) = args
         self.sendTCP([
             Code.HISTORY_REQ,

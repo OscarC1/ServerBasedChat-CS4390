@@ -271,7 +271,7 @@ class RunnableServer(BaseServer):
             session_id = getSessionId(client.id, client_id_b)
 
             for hist in history.get(session_id):
-                print(repr(hist))
+                #print(repr(hist))
                 (cid, msg) = hist
                 net.sendTCP(
                     connection,
