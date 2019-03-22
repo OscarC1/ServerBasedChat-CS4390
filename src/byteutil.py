@@ -1,6 +1,7 @@
 from enum import Enum
 
 NULL_BYTE = bytes(1)
+MESSAGE_SEP = bytes('\x1f', 'utf-8')
 
 
 def x2bytes(object):
@@ -26,12 +27,36 @@ def str2bytes(string):
 def split(bytes):
     return bytes.split(NULL_BYTE)
 
-
 def bytes2message(bytes):
+    print("bytes2message got "+ repr(bytes))
     code, *rest = bytes.split(NULL_BYTE)
     codePlusMsg = [int.from_bytes(code, byteorder='big')] + [b.decode('utf-8') for b in rest]
     return codePlusMsg
 
+def bytes2message2(mybytes):
+    #print("bytes2message2 got "+ repr(mybytes))
+    for byteMsg in mybytes.split(MESSAGE_SEP):
+        ##print("byteMsg " + repr(byteMsg))
+        if(byteMsg == b'\x0f\x00'):
+            print("")
+            ##print("empty byteMsg " + repr(byteMsg)) # history byte stream was interrupted/delayed
+        else:
+            ##print("good byteMsg" + repr(byteMsg))
+            code, *rest = byteMsg.split(NULL_BYTE)
+            ##print("code " + repr(code))
+            ##print("rest" + repr(rest))
+            
+            if(code == b'\x0f'):
+                (person, msg, *extraNull) = rest
+                #print("person " + repr(person))
+                #print("msg " + repr(msg))
+                (rmsg, *empty) = msg.split(b'\x0f')
+                rest2 = (person, rmsg)
+            else:
+                rest2 = rest
+
+            (code, *msg) = [int.from_bytes(code, byteorder='big')] + [b.decode('utf-8') for b in rest2]
+            yield (code, *msg)
 
 def bytes2bytemsg(bytes):
     code, *rest = bytes.split(NULL_BYTE)

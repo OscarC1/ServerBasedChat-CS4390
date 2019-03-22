@@ -9,9 +9,10 @@ Server classes
 
 import byteutil
 import net
-# import socket
+import socket
 import socketserver
 import threading
+import time
 
 from Codes import Code, printCodes
 from pprint import pprint
@@ -142,7 +143,7 @@ class RunnableServer(BaseServer):
         print("Closing", client_tcp)
 
         # TODO: Shut down properly
-        # client_tcp.shutdown()
+        client_tcp.shutdown(socket.SHUT_WR)
         client_tcp.close()
 
         print("Unregistering client")
@@ -269,19 +270,23 @@ class RunnableServer(BaseServer):
         elif code == Code.HISTORY_REQ.value:
             (client_id_b,) = args
             session_id = getSessionId(client.id, client_id_b)
+            print("History Request")
 
             for hist in history.get(session_id):
-                #print(repr(hist))
+                print("Sending :" + repr(hist))
                 (cid, msg) = hist
-                net.sendTCP(
-                    connection,
-                    byteutil.message2bytes([
-                        Code.HISTORY_RESP,
-                        cid,
-                        msg
-                    ])
-                )
-
+                #time.sleep(0.3); # temp fix for garbled messages
+                resp = byteutil.message2bytes([Code.HISTORY_RESP, cid, msg])
+                print("In bytes: " + repr(resp));
+                net.sendTCP(connection, resp)
+                #net.sendTCP(
+                #    connection,
+                #    byteutil.message2bytes([
+                #        Code.HISTORY_RESP,
+                #        cid,
+                #        msg
+                #   ])
+                #)
         else:
             print("No behavior for TCP code", code)
 
