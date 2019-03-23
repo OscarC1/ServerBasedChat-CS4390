@@ -38,7 +38,7 @@ def bytes2message2(mybytes):
     for byteMsg in mybytes.split(MESSAGE_SEP):
         ##print("byteMsg " + repr(byteMsg))
         if(byteMsg == b'\x0f\x00'):
-            print("")
+            print("", end='')
             ##print("empty byteMsg " + repr(byteMsg)) # history byte stream was interrupted/delayed
         else:
             ##print("good byteMsg" + repr(byteMsg))
