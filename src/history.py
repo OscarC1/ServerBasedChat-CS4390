@@ -26,5 +26,6 @@ def append(session_id, sender, message):
 def get(session_id):
     with open(getFile(session_id), "r", newline="\n") as histfile:
         for line in histfile:
-            (cid, msg) = line.split(SEP)
+            (cid, _msg) = line.split(SEP)
+            msg = (_msg if _msg[-1] != "\n" else _msg[:-1])
             yield (cid, msg)

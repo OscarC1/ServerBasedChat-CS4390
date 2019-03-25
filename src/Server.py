@@ -19,6 +19,7 @@ from prompt import Prompt
 from itertools import permutations
 
 import crypto
+from time import sleep
 
 from Client import BaseClient as Client
 
@@ -281,6 +282,7 @@ class RunnableServer(BaseServer):
                         msg
                     ])
                 )
+                sleep(0.05)  # this is the worst possible thing
 
         else:
             print("No behavior for TCP code", code)

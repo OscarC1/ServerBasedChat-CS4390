@@ -145,7 +145,11 @@ class BasePrompt():
         match = self.commands.get(name) or self.aliases.get(name)
         if match:
             # Run command, if a command matches
-            match(*inp[1:])
+            try:
+                match(*inp[1:])
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
         else:
             print("ERROR: No such command " + name)
 
@@ -252,16 +256,12 @@ class Command(object):
         self.helpdoc = "== " + self.name + " ==\n" + helpstr
 
     def run(self, *args):
-        """Call the bound function, catching exceptions.
+        """Call the bound function.
         
         Args:
             *args: arguments
         """
-        try:
-            self.callback(*args)
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
+        self.callback(*args)
 
     @property
     def helprow(self):

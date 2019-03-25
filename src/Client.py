@@ -321,7 +321,7 @@ class RunnableClient(BaseClient):
             (message,) = args
             print(formatChatMessage(self.session_partner, message, self.id))
         elif code == Code.HISTORY_RESP.value:
-            print(repr(args))
+            # print(repr(args))
             (client_id_b, message) = args
             print(formatChatMessage(client_id_b, message))
         else:
@@ -387,10 +387,13 @@ class RunnableClient(BaseClient):
             while True:
                 with patch_stdout():
                     rawin = self.ps.prompt(self.p.pstr)  # prompt(self.pstr)
-                    if self.session_partner:
-                        self.onChatInput(rawin)
-                    else:
-                        self.p.handleCommand(rawin)
+                    try:
+                        if self.session_partner:
+                            self.onChatInput(rawin)
+                        else:
+                            self.p.handleCommand(rawin)
+                    except BrokenPipeError as e:
+                        self.login(self.server)
         except (KeyboardInterrupt, EOFError) as e:
             # Catch Ctrl-C, Ctrl-D, and exit.
             print("User interrupt.")
