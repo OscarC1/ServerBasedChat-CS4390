@@ -42,7 +42,12 @@ class BaseServer():
 
 
 def getSessionId(*ids):
-    return "_".join(sorted(ids))
+
+    import hashlib
+    r = hashlib.sha256()
+    for piece in sorted(ids):
+        r.update(str(piece).encode('utf-8'))
+    return r.hexdigest()
 
 class RunnableServer(BaseServer):
 
