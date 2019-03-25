@@ -187,7 +187,7 @@ class RunnableServer(BaseServer):
         elif code == Code.CHAT.value:
             print("Got TCP CHAT message")
             (message,) = args
-            print(message)
+            # print(message)
             recipient = self.connections_by_id[client.session_partner.id]
             if recipient:
                 session_id = getSessionId(client.id, client.session_partner.id)

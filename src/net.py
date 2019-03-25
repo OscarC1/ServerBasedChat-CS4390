@@ -29,10 +29,11 @@ def reprSocketServer(sockserv):
 
 
 def getOwnIP():
-     for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
-         family, __, __, __, address = addrinfo
-         if family == socket.AddressFamily.AF_INET:
-             return address[0]
+    return ''
+    # for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
+    #     family, __, __, __, address = addrinfo
+    #         if family == socket.AddressFamily.AF_INET:
+    #             return address[0]
 
 def sendUDP(sock, message, dest_address):
     if SHOW_NET_INFO:

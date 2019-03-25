@@ -214,8 +214,13 @@ class RunnableClient(BaseClient):
         # serv_address_tcp = (server_ip, self.server_tcp_port)
 #         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.tcp_socket = net.newTCPSocket()
-        self.tcp_socket.connect(serv_address_tcp)
+        try:
+            self.tcp_socket = net.newTCPSocket()
+            self.tcp_socket.connect(serv_address_tcp)
+        except ConnectionRefusedError as e:
+            print("Could not connect!")
+            print(serv_address_tcp)
+            raise
 
         self.sendTCP([
             Code.CONNECT,
