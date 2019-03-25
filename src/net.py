@@ -29,13 +29,10 @@ def reprSocketServer(sockserv):
 
 
 def getOwnIP():
-    return ''
-
-    # for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
-    #     family, __, __, __, address = addrinfo
-    #     if family == socket.AddressFamily.AF_INET:
-    #         return address[0]
-
+     for addrinfo in socket.getaddrinfo(socket.gethostname(), 0):
+         family, __, __, __, address = addrinfo
+         if family == socket.AddressFamily.AF_INET:
+             return address[0]
 
 def sendUDP(sock, message, dest_address):
     if SHOW_NET_INFO:
@@ -84,7 +81,7 @@ def awaitTCP(sock, size):
 UDP_MSG_SIZE = 2**12
 MSG_SIZE = 2**12
 
-SERVER_IP = getOwnIP()  # "192.168.1.1"
+SERVER_IP = getOwnIP() # Use machine IPv4 Address e.g. 192.168.1.1X
 SERVER_UDP_PORT = 64
 CLIENT_UDP_PORT = 65
 SERVER_TCP_PORT = 66
