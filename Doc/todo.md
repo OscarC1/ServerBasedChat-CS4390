@@ -5,7 +5,7 @@
 ## Bugfix
 
 - Client IDs require input sanitation for filesystem storage
-- Server needs to release sockets/ports on close
+- TCP messages aren't properly separate when sent in quick succession. Stream issue. 
 
 ## QOL features
 

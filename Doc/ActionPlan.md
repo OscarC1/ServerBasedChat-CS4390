@@ -21,7 +21,7 @@ Team Members:
 | 1    | Action Plan                        | SG, OC                 | 2019-02-26 | GitHub           | None         | Get idea of how tasks will be divided                   | :ballot_box_with_check: | Most of team is less experienced in Python - members will need to use resources to become familiar. |
 | 2    | UDP Transport and Protocol         | SG             |            | IDE              | None         | Messages for login / initiation of connections done     | :ballot_box_with_check: |                                                              |
 | 3    | Authentication and CK-A Encryption | SG             |            | IDE              | 2            | Clients can be authenticated; messages can be encrypted | :ballot_box_with_check: |                                                              |
-| 4    | TCP Tunneling                      | SG |            | IDE              | 2,3          | Ready to implement client-client messaging              | :ballot_box_with_check: |                                                              |
+| 4    | TCP Tunneling                      | SG, OC |            | IDE              | 2,3          | Ready to implement client-client messaging              | :ballot_box_with_check: |                                                              |
 | 5    | Chat sessions                      | SG                     |            |                  |              |                                                         | :ballot_box_with_check: |                                                              |
 | 6    | Client Prompt and Messaging        | SG                     |            | IDE              | 2,3,4        | Chat between clients can be performed                   | :ballot_box_with_check: |                                                              |
 | 7    | Server Session Handling            | SG                     |            | IDE              | 2,3,4,5      | Functional chat in place                                | :ballot_box_with_check: |                                                              |
@@ -63,13 +63,13 @@ section Networking
 CK-A Encryption		:done,	cka, 2019-02-26, 7d
 UDP transport		:done,	udp, after cka, 5d
 TCP Tunnel			:done,	tcp, after cka, 7d
-Chat sessions		:active	chat, after tcp, 7d
+Chat sessions		:done	chat, after tcp, 7d
 section Client
 Client prompt		:done,   prompt, 2019-02-26, 5d
 UI polish			:active	ui, after prompt, 4d
 section Server
 Session handling	:done	session, after tcp, 10d
-History				:	history, after session,	5d
+History				:active	history, after session,	5d
 ```
 
 (Last updated: 2019-03-13)
