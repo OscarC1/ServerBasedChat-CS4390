@@ -15,6 +15,17 @@ NULL_BYTE = bytes(1)
 
 
 def x2bytes(object):
+    """Coerces an object to bytes, generically.
+    
+    Args:
+        object
+    
+    Returns:
+        bytes
+    
+    Raises:
+        AssertionError: No known coercion method.
+    """
     # print(object)
     if isinstance(object, str):
         return str2bytes(object)
@@ -32,14 +43,29 @@ def x2bytes(object):
 
 
 def str2bytes(string):
+    """Encode string."""
     return bytes(string.encode('utf-8'))
 
 
 def split(bytes):
+    """Split on the null byte.
+
+    Returns:
+        List
+    """
     return bytes.split(NULL_BYTE)
 
 
 def bytes2message(bytes):
+    """Decodes a message.
+    Should return a (code, *message) object.
+    
+    Args:
+        bytes (bytes): Byte-encoded message.
+    
+    Returns:
+        Tuple
+    """
     # print("bytes2message got", repr(bytes))
     code, *rest = bytes.split(NULL_BYTE)
     codePlusMsg = [int.from_bytes(code, byteorder='big')] + [b.decode('utf-8') for b in rest]
@@ -47,6 +73,14 @@ def bytes2message(bytes):
 
 
 def bytes2messages(mybytes):
+    """Given a bytes object, generates messages contained. 
+    
+    Args:
+        mybytes (bytes): Terminated messages
+    
+    Yields:
+        message: See bytes2message
+    """
     # print("bytes2messages got", repr(mybytes))
     messages = mybytes.split(MESSAGE_TERM)[:-1]
     # print(messages)
@@ -56,13 +90,15 @@ def bytes2messages(mybytes):
 
 
 def bytes2bytemsg(bytes):
+    """Decodes the CODE part of the message."""
     code, *rest = bytes.split(NULL_BYTE)
     codePlusMsg = [int.from_bytes(code, byteorder='big')] + rest
     return codePlusMsg
 
 
 def message2bytes(message):
-    return NULL_BYTE.join(map(x2bytes, message)) + MESSAGE_TERM
+    """Encodes a message as bytes"""
+    return NULL_BYTE.join(map(x2bytes, message))
 
 
 def formatBytesMessage(message):
