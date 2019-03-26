@@ -27,18 +27,25 @@ class UDPListener(socketserver.BaseRequestHandler):
         connection = self.server.socket
         callback = self.server.callback
 
-        message = request[0]
-        print(request)
-        print(client_address)
+        bytesin = request[0]
 
-        if SHOW_NET_INFO:
-            print("┌ Recieved UDP message")
-            print("│ Source: {}:{}".format(*client_address))
-            print("│ ┌Message (bytes): '{}'".format(message))
-            print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+        # For the sake of internal consistancy, we are treating
+        # UDP messages like they might contain multiple messages,
+        # like TCP.
 
-        code, *rest = byteutil.bytes2message(message)
-        callback(connection, code, rest, client_address)
+        for message in byteutil.bytes2messages(bytesin):
+            print(request)
+            print(client_address)
+
+            if SHOW_NET_INFO:
+                print("┌ Recieved UDP message")
+                print("│ Source: {}:{}".format(*client_address))
+                # print("│ ┌Message (bytes): '{}'".format(message))
+                # print("└ └Message: {}".format(byteutil.formatBytesMessage(message)))
+                print("└ Message: {}".format(message))
+
+            code, *rest = message  # byteutil.bytes2message(message)
+            callback(connection, code, rest, client_address)
 
 
 class TCPListener(socketserver.BaseRequestHandler):
@@ -85,26 +92,28 @@ def tcpListen(sock, callback):
     sock.settimeout(None)
     while True:
         try:
-            message = sock.recv(MSG_SIZE)
-            # print("listener got message " + repr(message))
-            if not message:
-                print("Detected null message")
+            bytesin = sock.recv(MSG_SIZE)
+            # print("listener got bytesin " + repr(bytesin))
+            if not bytesin:
+                print("Detected null bytesin")
                 print("Closing socket on", reprTCPSocket(sock))
                 return
 
             source_address = sock.getpeername()
 
-            if SHOW_NET_INFO:
-                print("┌ Recieved TCP message")
-                print("│ Source: {}:{}".format(*source_address))
-                print("│ ┌Message (bytes): {}".format(message))
-                print("└ └Message (print): {}".format(
-                    byteutil.formatBytesMessage(message)))
-
-            # code, *rest = byteutil.bytes2message(message)
+            # code, *rest = byteutil.bytes2message(bytesin)
             # callback(sock, code, rest, source_address)
-            for result in byteutil.bytes2message2(message):
-                code, *rest = result
+            for message in byteutil.bytes2messages(bytesin):
+
+                if SHOW_NET_INFO:
+                    print("┌ Recieved TCP message")
+                    print("│ Source: {}:{}".format(*source_address))
+                    # print("│ ┌message (bytes): {}".format(message))
+                    # print("└ └message (print): {}".format(
+                    #     byteutil.formatBytesMessage(message)))
+                    print("└ Message: {}".format(message))
+
+                code, *rest = message
                 callback(sock, code, rest, source_address)
 
         except OSError as e:

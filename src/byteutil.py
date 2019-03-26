@@ -10,8 +10,8 @@ Byte utilities
 
 from enum import Enum
 
+MESSAGE_TERM = bytes(chr(3), 'utf-8')
 NULL_BYTE = bytes(1)
-MESSAGE_SEP = bytes('\x1f', 'utf-8')
 
 
 def x2bytes(object):
@@ -40,36 +40,19 @@ def split(bytes):
 
 
 def bytes2message(bytes):
-    print("bytes2message got", repr(bytes))
+    # print("bytes2message got", repr(bytes))
     code, *rest = bytes.split(NULL_BYTE)
     codePlusMsg = [int.from_bytes(code, byteorder='big')] + [b.decode('utf-8') for b in rest]
     return codePlusMsg
 
 
-def bytes2message2(mybytes):
-    # print("bytes2message2 got "+ repr(mybytes))
-    for byteMsg in mybytes.split(MESSAGE_SEP):
-        # print("byteMsg " + repr(byteMsg))
-        if(byteMsg == b'\x0f\x00'):
-            print("", end='')
-            # print("empty byteMsg " + repr(byteMsg)) # history byte stream was interrupted/delayed
-        else:
-            # print("good byteMsg" + repr(byteMsg))
-            code, *rest = byteMsg.split(NULL_BYTE)
-            # print("code " + repr(code))
-            # print("rest" + repr(rest))
-
-            if(code == b'\x0f'):
-                (person, msg, *extraNull) = rest
-                # print("person " + repr(person))
-                # print("msg " + repr(msg))
-                (rmsg, *empty) = msg.split(b'\x0f')
-                rest2 = (person, rmsg)
-            else:
-                rest2 = rest
-
-            (code, *msg) = [int.from_bytes(code, byteorder='big')] + [b.decode('utf-8') for b in rest2]
-            yield (code, *msg)
+def bytes2messages(mybytes):
+    # print("bytes2messages got", repr(mybytes))
+    messages = mybytes.split(MESSAGE_TERM)[:-1]
+    # print(messages)
+    for byteMsg in messages:
+        # print("byteMsg", repr(byteMsg))
+        yield bytes2message(byteMsg)
 
 
 def bytes2bytemsg(bytes):
@@ -79,10 +62,14 @@ def bytes2bytemsg(bytes):
 
 
 def message2bytes(message):
-    return NULL_BYTE.join(map(x2bytes, message))
+    return NULL_BYTE.join(map(x2bytes, message)) + MESSAGE_TERM
 
 
 def formatBytesMessage(message):
+    # print(message)
     from Codes import codeno
-    code, *rest = bytes2message(message)
-    return ", ".join([codeno(code).name] + rest)
+    
+    return " | ".join(
+        ", ".join([codeno(code).name] + rest)
+        for code, *rest in bytes2messages(message)
+    )

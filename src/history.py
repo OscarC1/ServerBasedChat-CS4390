@@ -14,8 +14,9 @@ from Codes import Code
 os.makedirs("history", exist_ok=True)
 
 SEP = chr(7)
-#MESSAGE_SEP = chr(31)
-fileTerminator = chr(31) + chr(15) + chr(0) # Message Separator + Code + NullByte
+# MESSAGE_SEP = chr(31)
+# fileTerminator = chr(31) + Code.HISTORY_RESP.value + chr(0) # Message Separator + Code + NullByte
+
 
 def getFile(session_id):
     return os.path.join("history", "{}.txt".format(session_id))
@@ -23,7 +24,9 @@ def getFile(session_id):
 
 def append(session_id, sender, message):
     with open(getFile(session_id), "a", newline="\n") as histfile:
-        histfile.write(sender + SEP + message + "\n" + fileTerminator) # 
+        # histfile.write(sender + SEP + message + "\n" + fileTerminator)
+        histfile.write(sender + SEP + message + "\n")
+
 
 def get(session_id):
     pathToFile = getFile(session_id)
@@ -31,11 +34,13 @@ def get(session_id):
     if exists:
         with open(pathToFile, "r", newline="\n") as histfile:
             for line in histfile:
-                print("hist line "+ repr(line))
-                if(line == fileTerminator):
-                    print("fileTerminator hist line")
-                else:
-                    (cid, msg) = line.split(SEP)
-                    yield (cid, msg)
+                (cid, msg) = line.split(SEP)
+                yield (cid, msg)
+                # print("hist line "+ repr(line))
+                # if(line == fileTerminator):
+                #     print("fileTerminator hist line")
+                # else:
+                #     (cid, msg) = line.split(SEP)
+                #     yield (cid, msg)
     else:
         yield ("No history found for that user.", "")
