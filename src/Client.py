@@ -24,9 +24,8 @@ def formatChatMessage(id, msg, id2=""):
     return "{ident:>{size}} {msg}".format(
         size=max(len(id), len(id2)),
         ident="[{id}]".format(id=id),
-        msg=msg
+        msg=(msg if msg and msg[-1] != "\n" else msg[:-1])
     )
-
 
 
 class BaseClient():
