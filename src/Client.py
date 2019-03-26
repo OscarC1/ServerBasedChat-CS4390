@@ -212,7 +212,7 @@ class RunnableClient(BaseClient):
         print("Connecting TCP socket", serv_address_tcp)
         # self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # serv_address_tcp = (server_ip, self.server_tcp_port)
-#         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
             self.tcp_socket = net.newTCPSocket()
@@ -294,6 +294,8 @@ class RunnableClient(BaseClient):
             args (list): The non-code parts of the message
             source_address (ip, port): INET address of the message source
         """
+        #print("args"+ " ".join(str(x) for x in args));
+
         if code == Code.CHAT_STARTED.value:
             (sessid, clientid,) = args
             self.session_partner = clientid
@@ -326,8 +328,11 @@ class RunnableClient(BaseClient):
             (message,) = args
             print(formatChatMessage(self.session_partner, message, self.id))
         elif code == Code.HISTORY_RESP.value:
-            # print(repr(args))
-            (client_id_b, message) = args
+            # print("client got args" + repr(args))
+            (client_id_b, message, *rest) = args
+            # print("msg only: "+ message)
+            # print("msg split: " + messagef)
+            # print("final hist msg: " + formatChatMessage(client_id_b, message))
             print(formatChatMessage(client_id_b, message))
         else:
             print("No behavior for TCP code", code)
@@ -448,6 +453,7 @@ class RunnableClient(BaseClient):
             print("History: No user specified.")
             return
         (client_id_b,) = args
+        print("History for " + client_id_b + ": \n")
         self.sendTCP([
             Code.HISTORY_REQ,
             client_id_b

@@ -76,23 +76,30 @@ def tcpListen(sock, callback):
     while True:
         try:
             message = sock.recv(MSG_SIZE)
-        except OSError as e:
-            if e.errno == 9:  # Bad file descriptor
+            ##print("listener got message " + repr(message))
+        #except OSError as e:
+            #if e.errno == 9:  # Bad file descriptor
+               #return
+            if not message:
+                print("Detected null message")
+                print("Closing socket on", reprTCPSocket(sock))
                 return
-        
-        if not message:
-            print("Detected null message")
-            print("Closing socket on", reprTCPSocket(sock))
-            return
 
-        source_address = sock.getpeername()
+            source_address = sock.getpeername()
 
-        if SHOW_NET_INFO:
-            print("┌ Recieved TCP message")
-            print("│ Source: {}:{}".format(*source_address))
-            print("│ ┌Message (bytes): {}".format(message))
-            print("└ └Message (print): {}".format(
-                byteutil.formatBytesMessage(message)))
+            if SHOW_NET_INFO:
+                print("┌ Recieved TCP message")
+                print("│ Source: {}:{}".format(*source_address))
+                print("│ ┌Message (bytes): {}".format(message))
+                print("└ └Message (print): {}".format(
+                    byteutil.formatBytesMessage(message)))
 
-        code, *rest = byteutil.bytes2message(message)
-        callback(sock, code, rest, source_address)
+            #code, *rest = byteutil.bytes2message(message)
+            #callback(sock, code, rest, source_address)
+            for result in byteutil.bytes2message2(message):
+                code, *rest = result
+                callback(sock, code, rest, source_address)
+
+        except OSError as e:
+            #if e.errno == 9:  # Bad file descriptor
+               return
