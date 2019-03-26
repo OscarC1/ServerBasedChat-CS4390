@@ -11,6 +11,8 @@ except ImportError:
     def auto():
         global _auto_i
         _auto_i += 1
+        if _auto_i == 3:  # Skip message term symbol
+            _auto_i += 1
         return _auto_i
 
 
@@ -44,7 +46,7 @@ def codeno(i):
     for c in Code:
         if c.value == i:
             return c
-    raise KeyError
+    raise KeyError(i)
 
 def printCodes():
     print("\n".join(c.__str__() for c in Code))

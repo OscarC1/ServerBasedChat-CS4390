@@ -193,7 +193,7 @@ class RunnableServer(BaseServer):
             print("Got TCP CHAT message")
             (message,) = args
             # print(message)
-            recipient = self.connections_by_id[client.session_partner.id]
+            recipient = self.connections_by_id.get(client.session_partner.id)
             if recipient:
                 session_id = getSessionId(client.id, client.session_partner.id)
                 history.append(session_id, client.id, message)
@@ -332,6 +332,9 @@ class RunnableServer(BaseServer):
                     return
             # otherwise, failure
             print("Authentication failure")
+            print("Got/Expecting:")
+            print(response)
+            print(xres)
             net.sendUDP(
                 sock,
                 byteutil.message2bytes([
