@@ -12,6 +12,8 @@ import byteutil
 import socketserver
 from net import MSG_SIZE, reprTCPSocket, SHOW_NET_INFO
 
+MESSAGE_TERM = bytes(chr(3), 'utf-8')
+
 
 class UDPListener(socketserver.BaseRequestHandler):
     """
@@ -92,12 +94,22 @@ def tcpListen(sock, callback):
     sock.settimeout(None)
     while True:
         try:
-            bytesin = sock.recv(MSG_SIZE)
-            # print("listener got bytesin " + repr(bytesin))
-            if not bytesin:
-                print("Detected null bytesin")
-                print("Closing socket on", reprTCPSocket(sock))
-                return
+
+            # Spin cycle
+            # Catch very large messages. Users can send messages of any size.
+            # Key size is still limited, because UDP is not streamed
+            # This is a """""buffer"""""
+            bytesin = b''
+            while not bytesin or bytesin[-1] != 3:  # Message term
+                _bytesin = sock.recv(MSG_SIZE)
+                # print("listener got bytesin " + repr(bytesin))
+                if not _bytesin:
+                    print("Detected null bytesin")
+                    print("Closing socket on", reprTCPSocket(sock))
+                    return
+                bytesin += _bytesin
+                # print(bytesin)
+                # print(bytesin[-1], 3)
 
             source_address = sock.getpeername()
 
