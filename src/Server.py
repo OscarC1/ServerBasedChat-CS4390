@@ -5,6 +5,7 @@ Server classes
 
 # Authors:
 - Seth Giovanetti
+- Oscar Contreras
 """
 
 import byteutil
@@ -12,7 +13,6 @@ import net
 import socket
 import socketserver
 import threading
-import time
 
 from Codes import Code, printCodes
 from pprint import pprint
@@ -20,7 +20,6 @@ from prompt import Prompt
 from itertools import permutations
 
 import crypto
-from time import sleep
 
 from Client import BaseClient as Client
 
