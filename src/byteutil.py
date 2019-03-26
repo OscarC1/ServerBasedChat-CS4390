@@ -44,22 +44,22 @@ def bytes2message(bytes):
     return codePlusMsg
 
 def bytes2message2(mybytes):
-    #print("bytes2message2 got "+ repr(mybytes))
+    # print("bytes2message2 got "+ repr(mybytes))
     for byteMsg in mybytes.split(MESSAGE_SEP):
-        ##print("byteMsg " + repr(byteMsg))
+        # print("byteMsg " + repr(byteMsg))
         if(byteMsg == b'\x0f\x00'):
             print("", end='')
-            ##print("empty byteMsg " + repr(byteMsg)) # history byte stream was interrupted/delayed
+            # print("empty byteMsg " + repr(byteMsg)) # history byte stream was interrupted/delayed
         else:
-            ##print("good byteMsg" + repr(byteMsg))
+            # print("good byteMsg" + repr(byteMsg))
             code, *rest = byteMsg.split(NULL_BYTE)
-            ##print("code " + repr(code))
-            ##print("rest" + repr(rest))
+            # print("code " + repr(code))
+            # print("rest" + repr(rest))
             
             if(code == b'\x0f'):
                 (person, msg, *extraNull) = rest
-                #print("person " + repr(person))
-                #print("msg " + repr(msg))
+                # print("person " + repr(person))
+                # print("msg " + repr(msg))
                 (rmsg, *empty) = msg.split(b'\x0f')
                 rest2 = (person, rmsg)
             else:
