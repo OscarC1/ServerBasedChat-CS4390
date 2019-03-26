@@ -1,3 +1,13 @@
+#!/bin/python3
+"""
+# Description:
+Abstract network listeners
+
+# Authors:
+- Seth Giovanetti
+- Oscar Contreras
+"""
+
 import byteutil
 import socketserver
 from net import MSG_SIZE, reprTCPSocket, SHOW_NET_INFO

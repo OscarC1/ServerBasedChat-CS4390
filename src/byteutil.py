@@ -1,3 +1,13 @@
+#!/bin/python3
+"""
+# Description:
+Byte utilities
+
+# Authors:
+- Seth Giovanetti
+- Oscar Contreras
+"""
+
 from enum import Enum
 
 NULL_BYTE = bytes(1)
