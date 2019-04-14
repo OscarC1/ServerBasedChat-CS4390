@@ -5,6 +5,7 @@ Server classes
 
 # Authors:
 - Seth Giovanetti
+- Oscar Contreras
 """
 
 import byteutil
@@ -12,7 +13,6 @@ import net
 import socket
 import socketserver
 import threading
-import time
 
 from Codes import Code, printCodes
 from pprint import pprint
@@ -42,7 +42,12 @@ class BaseServer():
 
 
 def getSessionId(*ids):
-    return "_".join(sorted(ids))
+
+    import hashlib
+    r = hashlib.sha256()
+    for piece in sorted(ids):
+        r.update(str(piece).encode('utf-8'))
+    return r.hexdigest()
 
 class RunnableServer(BaseServer):
 
@@ -187,8 +192,8 @@ class RunnableServer(BaseServer):
         elif code == Code.CHAT.value:
             print("Got TCP CHAT message")
             (message,) = args
-            print(message)
-            recipient = self.connections_by_id[client.session_partner.id]
+            # print(message)
+            recipient = self.connections_by_id.get(client.session_partner.id)
             if recipient:
                 session_id = getSessionId(client.id, client.session_partner.id)
                 history.append(session_id, client.id, message)
@@ -275,7 +280,6 @@ class RunnableServer(BaseServer):
             for hist in history.get(session_id):
                 print("Sending :" + repr(hist))
                 (cid, msg) = hist
-                #time.sleep(0.3); # temp fix for garbled messages
                 resp = byteutil.message2bytes([Code.HISTORY_RESP, cid, msg])
                 print("In bytes: " + repr(resp));
                 net.sendTCP(connection, resp)
@@ -328,6 +332,9 @@ class RunnableServer(BaseServer):
                     return
             # otherwise, failure
             print("Authentication failure")
+            print("Got/Expecting:")
+            print(response)
+            print(xres)
             net.sendUDP(
                 sock,
                 byteutil.message2bytes([

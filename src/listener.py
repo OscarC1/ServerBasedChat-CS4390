@@ -1,6 +1,18 @@
+#!/bin/python3
+"""
+# Description:
+Abstract network listeners
+
+# Authors:
+- Seth Giovanetti
+- Oscar Contreras
+"""
+
 import byteutil
 import socketserver
 from net import MSG_SIZE, reprTCPSocket, SHOW_NET_INFO
+
+MESSAGE_TERM = bytes(chr(3), 'utf-8')
 
 
 class UDPListener(socketserver.BaseRequestHandler):
@@ -17,18 +29,25 @@ class UDPListener(socketserver.BaseRequestHandler):
         connection = self.server.socket
         callback = self.server.callback
 
-        message = request[0]
-        print(request)
-        print(client_address)
+        bytesin = request[0]
 
-        if SHOW_NET_INFO:
-            print("┌ Recieved UDP message")
-            print("│ Source: {}:{}".format(*client_address))
-            print("│ ┌Message (bytes): '{}'".format(message))
-            print("└ └Message (print): {}".format(byteutil.formatBytesMessage(message)))
+        # For the sake of internal consistancy, we are treating
+        # UDP messages like they might contain multiple messages,
+        # like TCP.
 
-        code, *rest = byteutil.bytes2message(message)
-        callback(connection, code, rest, client_address)
+        for message in byteutil.bytes2messages(bytesin):
+            print(request)
+            print(client_address)
+
+            if SHOW_NET_INFO:
+                print("┌ Recieved UDP message")
+                print("│ Source: {}:{}".format(*client_address))
+                # print("│ ┌Message (bytes): '{}'".format(message))
+                # print("└ └Message: {}".format(byteutil.formatBytesMessage(message)))
+                print("└ Message: {}".format(message))
+
+            code, *rest = message  # byteutil.bytes2message(message)
+            callback(connection, code, rest, client_address)
 
 
 class TCPListener(socketserver.BaseRequestHandler):
@@ -75,31 +94,42 @@ def tcpListen(sock, callback):
     sock.settimeout(None)
     while True:
         try:
-            message = sock.recv(MSG_SIZE)
-            ##print("listener got message " + repr(message))
-        #except OSError as e:
-            #if e.errno == 9:  # Bad file descriptor
-               #return
-            if not message:
-                print("Detected null message")
-                print("Closing socket on", reprTCPSocket(sock))
-                return
+
+            # Spin cycle
+            # Catch very large messages. Users can send messages of any size.
+            # Key size is still limited, because UDP is not streamed
+            # This is a """""buffer"""""
+            bytesin = b''
+            while not bytesin or bytesin[-1] != 3:  # Message term
+                _bytesin = sock.recv(MSG_SIZE)
+                # print("listener got bytesin " + repr(bytesin))
+                if not _bytesin:
+                    print("Detected null bytesin")
+                    print("Closing socket on", reprTCPSocket(sock))
+                    return
+                bytesin += _bytesin
+                # print(bytesin)
+                # print(bytesin[-1], 3)
 
             source_address = sock.getpeername()
 
-            if SHOW_NET_INFO:
-                print("┌ Recieved TCP message")
-                print("│ Source: {}:{}".format(*source_address))
-                print("│ ┌Message (bytes): {}".format(message))
-                print("└ └Message (print): {}".format(
-                    byteutil.formatBytesMessage(message)))
+            # code, *rest = byteutil.bytes2message(bytesin)
+            # callback(sock, code, rest, source_address)
+            for message in byteutil.bytes2messages(bytesin):
 
-            #code, *rest = byteutil.bytes2message(message)
-            #callback(sock, code, rest, source_address)
-            for result in byteutil.bytes2message2(message):
-                code, *rest = result
+                if SHOW_NET_INFO:
+                    print("┌ Recieved TCP message")
+                    print("│ Source: {}:{}".format(*source_address))
+                    # print("│ ┌message (bytes): {}".format(message))
+                    # print("└ └message (print): {}".format(
+                    #     byteutil.formatBytesMessage(message)))
+                    print("└ Message: {}".format(message))
+
+                code, *rest = message
                 callback(sock, code, rest, source_address)
 
         except OSError as e:
-            #if e.errno == 9:  # Bad file descriptor
-               return
+            if e.errno == 9:  # Bad file descriptor
+                return
+            else:
+                raise

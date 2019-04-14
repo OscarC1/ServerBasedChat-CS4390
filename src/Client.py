@@ -24,9 +24,8 @@ def formatChatMessage(id, msg, id2=""):
     return "{ident:>{size}} {msg}".format(
         size=max(len(id), len(id2)),
         ident="[{id}]".format(id=id),
-        msg=msg
+        msg=(msg if msg and msg[-1] != "\n" else msg[:-1])
     )
-
 
 
 class BaseClient():
@@ -214,8 +213,13 @@ class RunnableClient(BaseClient):
         # serv_address_tcp = (server_ip, self.server_tcp_port)
         # self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.tcp_socket = net.newTCPSocket()
-        self.tcp_socket.connect(serv_address_tcp)
+        try:
+            self.tcp_socket = net.newTCPSocket()
+            self.tcp_socket.connect(serv_address_tcp)
+        except ConnectionRefusedError as e:
+            print("Could not connect!")
+            print(serv_address_tcp)
+            raise
 
         self.sendTCP([
             Code.CONNECT,
@@ -323,11 +327,11 @@ class RunnableClient(BaseClient):
             (message,) = args
             print(formatChatMessage(self.session_partner, message, self.id))
         elif code == Code.HISTORY_RESP.value:
-            ##print("client got args" + repr(args))
+            # print("client got args" + repr(args))
             (client_id_b, message, *rest) = args
-            ##print("msg only: "+ message)
-            ## print("msg split: " + messagef)
-            ##print("final hist msg: " + formatChatMessage(client_id_b, message))
+            # print("msg only: "+ message)
+            # print("msg split: " + messagef)
+            # print("final hist msg: " + formatChatMessage(client_id_b, message))
             print(formatChatMessage(client_id_b, message))
         else:
             print("No behavior for TCP code", code)
@@ -392,10 +396,13 @@ class RunnableClient(BaseClient):
             while True:
                 with patch_stdout():
                     rawin = self.ps.prompt(self.p.pstr)  # prompt(self.pstr)
-                    if self.session_partner:
-                        self.onChatInput(rawin)
-                    else:
-                        self.p.handleCommand(rawin)
+                    try:
+                        if self.session_partner:
+                            self.onChatInput(rawin)
+                        else:
+                            self.p.handleCommand(rawin)
+                    except BrokenPipeError as e:
+                        self.login(self.server)
         except (KeyboardInterrupt, EOFError) as e:
             # Catch Ctrl-C, Ctrl-D, and exit.
             print("User interrupt.")
